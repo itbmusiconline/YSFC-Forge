@@ -60,8 +60,14 @@ $bodyContent = $bodyMatch.Groups[1].Value.Trim("`r","`n")
 # - then a small script reads that text and injects it as a <style> element
 # - then append the body content
 $embeddedHtml = @"
-<!-- Auto-generated embedded version (CSS injected via script) -->
+<!-- SPDX-License-Identifier: MIT
+YSFC Forge Library Builder
+Copyright (c) 2026 Johan Adolfsson
+Licensed under the MIT License
+See: https://github.com/YSFCforge/ysfc-forge/blob/main/LICENSE
+-->
 
+<!-- Auto-generated embedded version (CSS injected via script) -->
 <!-- Raw CSS stored in a non-executing script tag to preserve exact characters -->
 <script id="ysfc-raw-css" type="text/plain">
 $styleContent

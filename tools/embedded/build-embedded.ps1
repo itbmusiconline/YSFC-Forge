@@ -60,6 +60,13 @@ try {
 
 # Build HTML that loads external CSS then appends body content
 $loader = @"
+<!-- SPDX-License-Identifier: MIT
+YSFC Forge Library Builder
+Copyright (c) 2026 Johan Adolfsson
+Licensed under the MIT License
+See: https://github.com/YSFCforge/ysfc-forge/blob/main/LICENSE
+-->
+
 <!-- Loading the separate CSS file -->
 <script>
     const link = document.createElement('link');
