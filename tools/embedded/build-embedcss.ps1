@@ -122,8 +122,12 @@ $bodyContent = $bodyMatch.Groups[1].Value.Trim("`r","`n")
 # - then append the body content
 $embeddedHtml = @"
 <!-- SPDX-License-Identifier: MIT
+
 YSFC Forge Library Builder
-Copyright (c) 2026 Johan Adolfsson
+Original work: Copyright (c) 2026 Johan Adolfsson
+Modifications: Copyright (c) 2026 Kalin Mirchev, ITB Music Online
+  English default, linked h3 heading, embeddable fragment. Functionality unchanged.
+
 Licensed under the MIT License
 See: https://github.com/YSFCforge/ysfc-forge/blob/main/LICENSE
 -->
