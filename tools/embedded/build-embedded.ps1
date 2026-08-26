@@ -85,10 +85,24 @@ if (-not $styleMatch.Success) {
 }
 $styleContent = $styleMatch.Groups[1].Value.Trim("`r","`n")
 
-# itb-custom: the .ver accent-color rule upstream ships is scoped to
-# "h1 .ver". Since the heading is now an <h3>, add an equivalent rule so
-# the new GitHub link still gets the accent color.
-$styleContent += "`r`n/* itb-custom: accent color for the linked heading (was h1 .ver only) */`r`nh3 .ver { color: var(--accent); }`r`n"
+# itb-custom: upstream styles the whole header through h1-scoped rules
+# (h1, h1 .ver, h1 .sep, h1 .spacer, h1 .btn-group). Now that the heading
+# is an <h3>, none of them match any more - which drops "display: flex"
+# and ".spacer { flex: 1 }" and so breaks the right-alignment of the
+# button group. Mirror every h1-scoped rule onto h3 rather than listing
+# them by hand, so any h1 rule upstream adds later is carried over too.
+$h1RulePattern = '(?m)^[ \t]*h1\b(?<sel>[^{}]*)\{(?<body>[^{}]*)\}'
+$h1Rules = [regex]::Matches($styleContent, $h1RulePattern)
+if ($h1Rules.Count -eq 0) {
+    Write-Warning "itb-custom: found no h1-scoped CSS rules to mirror onto h3. The embedded header will lose its layout - check upstream's CSS."
+} else {
+    $mirrored = "`r`n/* itb-custom: h1 rules mirrored onto h3 (heading downgraded for embedding) */`r`n"
+    foreach ($rule in $h1Rules) {
+        $mirrored += "h3" + $rule.Groups['sel'].Value + "{" + $rule.Groups['body'].Value + "}`r`n"
+    }
+    $styleContent += $mirrored
+    Write-Host ("itb-custom: mirrored {0} h1 CSS rule(s) onto h3." -f $h1Rules.Count)
+}
 
 # Extract first <body>...</body>
 $bodyMatch = [regex]::Match($html, "(?is)<body\b[^>]*>(.*?)</body>")
