@@ -85,6 +85,17 @@ if (-not $styleMatch.Success) {
 }
 $styleContent = $styleMatch.Groups[1].Value.Trim("`r","`n")
 
+# itb-custom: the selection table is 8px taller here than upstream ships it,
+# to line up with the surrounding layout on the host page. Anchored on the
+# rule name as well as the value so it cannot drift onto another rule.
+$selPattern = '(?s)(\.seltable-wrap\s*\{[^}]*?height:\s*)251px'
+if ($styleContent -match $selPattern) {
+    $styleContent = $styleContent -replace $selPattern, '${1}259px'
+    Write-Host "itb-custom: .seltable-wrap height patched 251px -> 259px."
+} else {
+    Write-Warning "itb-custom: could not find '.seltable-wrap { ... height: 251px }' to patch. Upstream may have changed it - check the selection table height."
+}
+
 # itb-custom: upstream styles the whole header through h1-scoped rules
 # (h1, h1 .ver, h1 .sep, h1 .spacer, h1 .btn-group). Now that the heading
 # is an <h3>, none of them match any more - which drops "display: flex"
