@@ -91,7 +91,7 @@
       padding: 16px;
     }
 
-    h3 {
+    h1 {
       font-family: var(--mono);
       font-size: 14px;
       font-weight: 600;
@@ -102,10 +102,10 @@
       gap: 10px;
       margin-bottom: 16px;
     }
-    h3 .ver { color: var(--accent); }
-    h3 .sep { color: var(--border-hi); }
-    h3 .spacer { flex: 1; }
-    h3 .btn-group {
+    h1 .ver { color: var(--accent); }
+    h1 .sep { color: var(--border-hi); }
+    h1 .spacer { flex: 1; }
+    h1 .btn-group {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;      /* allows the second button to wrap */
@@ -446,7 +446,7 @@
        options[i].selected) work unchanged. Rows support click / Ctrl+click /
        Shift+click multi-select that mirrors into the select. */
     .seltable-wrap {
-      height: 258px;
+      height: 251px;
       overflow: auto;
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -715,14 +715,14 @@
 </head>
 <body>
 
-<h3>
-  <a href="https://github.com/YSFCforge/" class="ver" title="Open the YSFC Forge project on GitHub" target="_blank" rel="noopener noreferrer">YSFC Forge</a> Library Builder
+<h1>
+  Library Builder by <a href="https://github.com/YSFCforge/" class="ver" title="Open the YSFC Forge project on GitHub" target="_blank" rel="noopener noreferrer">YSFC Forge</a>
   <span class="sep">│</span>
   <span class="ver">v15.46</span>
   <span class="sep">│</span>
   Y2L/U · X7L/U · X8L/U → Y2L/U · X7L export
-<!--  <span class="sep">│</span>
-  <span>Hosted by <a href="https://itb-music.online/" class="ver" title="ITB Music Online: Premium sounds for Yamaha synths, since 2020" target="_blank" rel="noopener noreferrer">ITB-Music</a></span> -->
+  <span class="sep">│</span>
+  <span>Hosted by <a href="https://itb-music.online/" class="ver" title="ITB Music Online: Premium sounds for Yamaha synths, since 2020" target="_blank" rel="noopener noreferrer">ITB-Music</a></span>
   <span class="spacer"></span>
   <div class="btn-group">
     <button id="themeToggle" data-i18n-title="theme_toggle_title" title="Växla ljust/mörkt läge">
@@ -732,7 +732,7 @@
       <span id="advancedIcon">♾️</span> <span id="advancedLabel">Advanced View</span>
     </button>
   </div>
-</h3>
+</h1>
 
 <div class="grid-main">
 
