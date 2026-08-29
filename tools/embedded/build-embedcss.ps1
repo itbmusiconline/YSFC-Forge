@@ -100,6 +100,22 @@ if ($styleContent -match $selPattern) {
     Write-Warning "itb-custom: could not find '.seltable-wrap { ... height: 251px }' to patch. Upstream may have changed it - check the selection table height."
 }
 
+# itb-custom: the host page loads this fragment into a container carrying
+# the .forge-app class, so upstream's body-level styling (font, colours,
+# background, padding) has to be re-scoped onto that container instead of
+# the hosting page's own <body>. Skips the patch unless exactly one body
+# rule is present, so an upstream change cannot cause a silent mis-edit.
+$bodyRulePattern = '(?m)^(?<indent>[ \t]*)body\s*\{'
+$bodyRuleCount = ([regex]::Matches($styleContent, $bodyRulePattern)).Count
+if ($bodyRuleCount -eq 1) {
+    $styleContent = $styleContent -replace $bodyRulePattern, '${indent}.forge-app {'
+    Write-Host "itb-custom: body selector re-scoped to .forge-app."
+} elseif ($bodyRuleCount -eq 0) {
+    Write-Warning "itb-custom: no 'body { ... }' rule found to re-scope to .forge-app. Upstream may have changed it - check the embed's font, colours and padding."
+} else {
+    Write-Warning "itb-custom: found $bodyRuleCount 'body { ... }' rules but expected exactly 1. Skipping the .forge-app re-scope to avoid an unintended edit - check upstream's CSS."
+}
+
 # itb-custom: upstream styles the whole header through h1-scoped rules
 # (h1, h1 .ver, h1 .sep, h1 .spacer, h1 .btn-group). Now that the heading
 # is an <h3>, none of them match any more - which drops "display: flex"
