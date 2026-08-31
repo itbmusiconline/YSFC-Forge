@@ -39,6 +39,83 @@ Generates:
 - ysfc-library-builder-body.html  
 (Splits the content of the <style> and <body> into separate files)
 
+### build-sysex-embedded.ps1
+Generates:
+- ysfc-sysex-converter.html  (paste into the Elementor HTML widget)
+- ysfc-sysex-converter.js    (upload to the web server)
+
+See "SysEx Converter: external JavaScript" below - this one works
+differently from the two Library Builder scripts.
+
+## SysEx Converter: external JavaScript
+
+The SysEx Converter is about 2.3 MB, of which roughly 2.26 MB is a single
+inline `<script>` block - over half of that is one base64 Y2L template
+(`FMX_VERIFIED_11SLOT_Y2L_B64`). Pasting all of it into an Elementor widget
+would store it in the WordPress database, re-send it uncached on every page
+view, add a ~2.3 MB copy to every page revision, and slow the editor down.
+
+So this script splits the tool in two:
+
+| Part | Size | Where it goes |
+|-|-|-|
+| CSS + markup | ~22 KB | the Elementor HTML widget |
+| JavaScript | ~2.26 MB | a static file on the server |
+
+**Where to put the .js:** `/wp-content/uploads/ysfc-forge/`. The uploads
+folder survives theme switches and theme, plugin and core updates, is already
+writable, and is included in backup plugins by default. A dedicated subfolder
+also makes it easy to write cache-plugin exclusion rules. Change `$JsBaseUrl`
+at the top of the script if you move it.
+
+Upload via FTP or the host's file manager - the WordPress Media Library
+rejects `.js` by default, and that restriction should be left in place.
+
+**Important - do not let any plugin defer this script.** The converter has no
+`DOMContentLoaded` wrapper: it runs immediately and calls `applyLang();
+render(); updateConvertGate();` at the end, so it depends on executing after
+its markup is parsed. The generated `<script src>` tag is therefore placed
+last and carries no `defer` or `async`. If an optimisation plugin (WP Rocket,
+Autoptimize, LiteSpeed Cache) defers or moves it, the tool breaks. Exclude
+`/wp-content/uploads/ysfc-forge/*` from JS optimisation.
+
+The filename is fixed rather than version-stamped, so updating means replacing
+one file and never re-pasting the widget. The trade-off is that cache
+freshness relies on the server revalidating - **purge the CDN after each
+update** if you use one.
+
+### Knowing what to update
+
+Each run compares the new output against the previous export and reports
+which of the two files actually changed:
+
+    === What changed since the last export ===
+      Widget HTML : unchanged -> nothing to do in Elementor
+      JavaScript  : CHANGED   -> re-upload ysfc-sysex-converter.js
+
+Only the changed file is backed up. Note the comparison is on decoded text,
+so a difference in file encoding alone would not be reported as a change.
+
+### Customizations
+
+Three of the six are applied here. The `h1`-to-`h3` conversion and the `h1`
+CSS mirroring do not apply - the converter has no `<h1>`, its heading is a
+`<div class="brand">` - and there is no `.seltable-wrap`.
+
+1. **Default language set to English.** The converter's code is minified and
+   uses a different variable, so this needs its own pattern:
+   `let lang=localStorage.getItem('ysfc-lang')||'sv'`.
+2. **`body` re-scoped to `.forge-app`.** Its stylesheet is minified, so the
+   rule appears as `body{...}` with no space.
+3. **"YSFC Forge" in the header linked to the GitHub project.** The link uses
+   `class="ver"`, which `.brand .ver` already colours with the accent, so no
+   companion CSS rule is needed here.
+
+Unlike the Library Builder outputs, these two files are written **without a
+UTF-8 BOM**. A BOM survives into the page as a stray U+FEFF text node inside
+`.forge-app`, which WordPress's `wpautop` can turn into an empty `<p>`. The
+`.ps1` scripts themselves keep their BOM - Windows PowerShell 5.1 needs it.
+
 ## Customizations applied at build time
 
 **The tracked source file is never edited.** `ysfc_forge_library_builder_v*.html`
