@@ -107,8 +107,8 @@ so a difference in file encoding alone would not be reported as a change.
 
 ### Customizations
 
-Three of the six are applied here. The `h1`-to-`h3` conversion and the `h1`
-CSS mirroring do not apply - the converter has no `<h1>`, its heading is a
+Four are applied here. The `h1`-to-`h3` conversion and the `h1` CSS mirroring
+do not apply - the converter has no `<h1>`, its heading is a
 `<div class="brand">` - and there is no `.seltable-wrap`.
 
 1. **Default language set to English.** The converter's code is minified and
@@ -116,9 +116,39 @@ CSS mirroring do not apply - the converter has no `<h1>`, its heading is a
    `let lang=localStorage.getItem('ysfc-lang')||'sv'`.
 2. **`body` re-scoped to `.forge-app`.** Its stylesheet is minified, so the
    rule appears as `body{...}` with no space.
-3. **"YSFC Forge" in the header linked to the GitHub project.** The link uses
+3. **The bare `header` rule scoped to `.forge-app header`.** Confirmed on the
+   live site 2026-08-31. See "Bare element selectors leak" below.
+4. **"YSFC Forge" in the header linked to the GitHub project.** The link uses
    `class="ver"`, which `.brand .ver` already colours with the accent, so no
    companion CSS rule is needed here.
+
+### Bare element selectors leak into the host page
+
+The stylesheet is injected into `document.head`, so a selector naming a bare
+HTML element applies to the **whole hosting page**, not just the embed.
+Re-scoping `body` to `.forge-app` fixes only that one rule.
+
+Upstream's converter shipped:
+
+    header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+
+which matched the hosting site's own `<header>` and forced it into a flex row
+- `align-items:center` centring vertically while the default
+`justify-content:flex-start` pushed the contents left. The reported symptom
+was a site header that had gone left-aligned instead of centred. Scoping it to
+`.forge-app header` confines it to the embed; the converter's own `<header>`
+is inside that container, so it is unaffected.
+
+**Others are still unscoped, deliberately.** Upstream also ships bare `*`,
+`html,body`, `button`, `input`, `select`, `table`, `th` and `td` rules. They
+reach the host page too, but nothing visible is affected on the current site,
+and each extra patch is another thing to re-check on an upstream sync. If site
+buttons or tables ever start looking wrong, these are the first suspects -
+scope them the same way.
+
+The Library Builder's stylesheet has the same class of leak (bare `h1`,
+`select`, `button`), also left unscoped for the same reason. Note its `h1`
+rule would restyle a host page's own `<h1>` if one is present.
 
 Unlike the Library Builder outputs, these two files are written **without a
 UTF-8 BOM**. A BOM survives into the page as a stray U+FEFF text node inside

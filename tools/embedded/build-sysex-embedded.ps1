@@ -139,7 +139,31 @@ if ($bodyRuleCount -eq 1) {
     Write-Warning "itb-custom: found $bodyRuleCount 'body { ... }' rules but expected exactly 1. Skipping the .forge-app re-scope to avoid an unintended edit - check upstream's CSS."
 }
 
-# -- itb-custom patch 3: link "YSFC Forge" in the header to GitHub ----------
+# -- itb-custom patch 3: scope the bare "header" rule to .forge-app ---------
+# The stylesheet is injected into document.head, so a bare element selector
+# applies to the WHOLE host page. Upstream's
+#   header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+# therefore hit the hosting site's own <header> and forced it into a
+# left-aligned flex row. Scoping it to .forge-app confines it to the embed.
+#
+# Note: upstream ships other bare element selectors too (*, html/body,
+# button, input, select, table, th, td). They also reach the host page, but
+# were left alone deliberately - on this site nothing visible is affected,
+# and each extra patch is another thing to re-check on an upstream sync. If
+# site buttons or tables ever start looking wrong, they are the first
+# suspects and should be scoped the same way.
+$headerRulePattern = '(?m)^(?<ws>[ \t]*)header(?<ws2>[ \t]*)\{'
+$headerRuleCount = ([regex]::Matches($styleContent, $headerRulePattern)).Count
+if ($headerRuleCount -eq 1) {
+    $styleContent = $styleContent -replace $headerRulePattern, '${ws}.forge-app header${ws2}{'
+    Write-Host "itb-custom: bare 'header' rule scoped to '.forge-app header'."
+} elseif ($headerRuleCount -eq 0) {
+    Write-Warning "itb-custom: no bare 'header { ... }' rule found to scope. Upstream may have changed it - check that the embed is not restyling the host page's header."
+} else {
+    Write-Warning "itb-custom: found $headerRuleCount bare 'header { ... }' rules but expected exactly 1. Skipping the scope patch to avoid an unintended edit - check upstream's CSS."
+}
+
+# -- itb-custom patch 4: link "YSFC Forge" in the header to GitHub ----------
 # The heading is a <div class="brand">, not an <h1>, so nothing is re-scoped
 # here. The link uses class="ver", which .brand .ver already colours with the
 # accent, so no companion CSS rule is needed.
