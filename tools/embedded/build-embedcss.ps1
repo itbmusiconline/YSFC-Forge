@@ -8,6 +8,27 @@
 
 Set-Location $PSScriptRoot
 
+# How many timestamped backups to keep per output file. Older ones are
+# deleted automatically at the end of each run. Set to 0 to keep none.
+$BackupsToKeep = 5
+
+# Deletes all but the newest $Keep backups matching a regex. The regex is
+# deliberately strict - it matches only "name.YYYYMMDD.HHMMSS.ext" - so a
+# current output file can never be caught by the cleanup.
+function Remove-OldBackups {
+    param([string]$Pattern, [int]$Keep)
+    $old = Get-ChildItem -Path $PSScriptRoot -File |
+           Where-Object { $_.Name -match $Pattern } |
+           Sort-Object LastWriteTime -Descending |
+           Select-Object -Skip $Keep
+    foreach ($f in $old) {
+        Remove-Item -LiteralPath $f.FullName -Force
+        Write-Host "  Removed old backup: $($f.Name)"
+    }
+    return @($old).Count
+}
+
+
 # Find latest source HTML in parent folder
 $sourceFile = Get-ChildItem .. -Filter "ysfc_forge_library_builder_v*.html" -File |
     Sort-Object LastWriteTime -Descending |
@@ -193,3 +214,11 @@ try {
 
 Write-Host "Source: $sourcePath"
 Write-Host "Generated: $htmlTarget"
+
+# -- Backup retention -------------------------------------------------------
+$removed = 0
+$removed += Remove-OldBackups -Pattern '^ysfc-library-builder\.\d{8}\.\d{6}\.html$' -Keep $BackupsToKeep
+if ($removed -gt 0) {
+    Write-Host ""
+    Write-Host ("Backup cleanup: removed {0} old backup(s), keeping the newest {1} of each." -f $removed, $BackupsToKeep)
+}

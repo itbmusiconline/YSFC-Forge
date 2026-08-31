@@ -33,11 +33,20 @@ Generates:
 self-contained code that can be used within a HTML/JS compatible container. 
 CSS is injected via <script>)
 
-### build-embedded.ps1
+### build-library-embedded.ps1
 Generates:
-- ysfc-library-builder-style.css  
-- ysfc-library-builder-body.html  
-(Splits the content of the <style> and <body> into separate files)
+- ysfc-library-builder-embed.html  (paste into the Elementor HTML widget, ~44 KB)
+- ysfc-library-builder.js          (upload to the web server, ~441 KB)
+
+The recommended build. CSS and markup stay inline in the widget; only the
+JavaScript is externalised, so the widget drops from ~495 KB to ~44 KB while
+still rendering styled immediately.
+
+*Replaced `build-embedded.ps1`*, which split the CSS out into its own file and
+so produced a `-body.html` that rendered as unstyled plain text unless the
+separate stylesheet happened to be loaded. That was not a flash-of-unstyled-
+content problem and had nothing to do with external JavaScript - the file
+simply contained no CSS at all.
 
 ### build-sysex-embedded.ps1
 Generates:
@@ -172,11 +181,51 @@ in the script, compare it against the new upstream source, and update it.
 Customization 6 also reports a count (`mirrored 5 h1 CSS rule(s) onto h3`); if
 that number changes, upstream's header CSS changed.
 
+## Why the CSS stays inline
+
+All three scripts keep the CSS inside the widget, stored in a
+`<script type="text/plain">` block and injected into `document.head` by a
+small script placed **before** the markup. Styles are therefore applied
+before the content renders - there is no unstyled flash.
+
+Do not move the CSS to a separate file loaded later in the page. That is
+exactly what the retired `build-embedded.ps1` did, and the result rendered as
+unstyled plain text.
+
+## The external JavaScript
+
+`build-library-embedded.ps1` and `build-sysex-embedded.ps1` both externalise
+the application code. See "SysEx Converter: external JavaScript" below - the
+same rules apply to both, including the deferral warning, and both read their
+target path from `$JsBaseUrl` at the top of the script.
+
+`$JsBaseUrl` is a **root-relative** path: the leading `/` makes the browser
+resolve it from the site root, not from the page the widget sits on, so the
+widget works at any page depth. Verified with the widget served from
+`/tools/library-builder/` - the script still resolved to
+`/wp-content/uploads/...`. If WordPress is installed in a subdirectory,
+include that prefix in `$JsBaseUrl`. A full absolute URL would also work but
+hard-codes the domain and breaks on staging copies.
+
 ## Backups
+
 Before generating new files, existing ones are renamed using:
+ysfc-library-builder-embed.YYYYMMDD.HHMMSS.html
+ysfc-library-builder.YYYYMMDD.HHMMSS.js
+ysfc-sysex-converter.YYYYMMDD.HHMMSS.html
+ysfc-sysex-converter.YYYYMMDD.HHMMSS.js
 ysfc-library-builder.YYYYMMDD.HHMMSS.html
-ysfc-library-builder-style.YYYYMMDD.HHMMSS.css
-ysfc-library-builder-body.YYYYMMDD.HHMMSS.html
+
+Each script keeps the newest `$BackupsToKeep` backups (default 5) of each of
+its own outputs and deletes the rest at the end of every run. Change the value
+at the top of the script; 0 keeps none.
+
+The cleanup regex matches only the exact `name.YYYYMMDD.HHMMSS.ext` form, so a
+current output file can never be deleted by it. Each script only ever prunes
+its own outputs.
+
+The split builds also back up **only the file that actually changed**, so an
+unchanged .js does not accumulate identical copies.
 
 ## Source File
 Both scripts automatically detect the latest upstream file matching:
