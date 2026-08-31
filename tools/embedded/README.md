@@ -42,6 +42,8 @@ The recommended build. CSS and markup stay inline in the widget; only the
 JavaScript is externalised, so the widget drops from ~495 KB to ~44 KB while
 still rendering styled immediately.
 
+Confirmed working on the live site 2026-08-31.
+
 *Replaced `build-embedded.ps1`*, which split the CSS out into its own file and
 so produced a `-body.html` that rendered as unstyled plain text unless the
 separate stylesheet happened to be loaded. That was not a flash-of-unstyled-
@@ -147,8 +149,12 @@ buttons or tables ever start looking wrong, these are the first suspects -
 scope them the same way.
 
 The Library Builder's stylesheet has the same class of leak (bare `h1`,
-`select`, `button`), also left unscoped for the same reason. Note its `h1`
-rule would restyle a host page's own `<h1>` if one is present.
+`select`, `button`), also left unscoped for the same reason. Its `h1` rule
+would restyle a host page's own `<h1>` if one were present and nothing more
+specific won - but on the live page it caused no visible problem, confirmed
+2026-08-31. It remains a latent risk: if that widget is ever placed on a page
+whose heading is styled loosely, the `h1` rule is the first suspect and should
+be scoped to `.forge-app h1` the same way the SysEx `header` rule was.
 
 Unlike the Library Builder outputs, these two files are written **without a
 UTF-8 BOM**. A BOM survives into the page as a stray U+FEFF text node inside
