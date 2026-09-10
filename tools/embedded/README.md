@@ -107,6 +107,28 @@ which of the two files actually changed:
 Only the changed file is backed up. Note the comparison is on decoded text,
 so a difference in file encoding alone would not be reported as a change.
 
+**Known false positive: line endings.** The comparison ignores encoding but
+*not* line endings, so a file whose CRLF/LF mix has shifted is reported as
+CHANGED even when every character is identical. This happened on
+2026-09-10: the SysEx widget HTML was reported CHANGED with a 36-byte
+growth, and the two files turned out to be identical once `\r\n` was
+normalised - 36 lone LFs had become CRLFs. Nothing needed re-pasting.
+
+Before acting on a CHANGED verdict for a file whose source did not change,
+confirm it is real:
+
+    node -e "const f=require('fs'),n=s=>f.readFileSync(s,'utf8').replace(/\r\n/g,'\n');console.log(n(process.argv[1])===n(process.argv[2]))" FILE BACKUP
+
+`true` means the change is line endings only - ignore it.
+
+**Compare against the right baseline.** The split builds back up only the
+file that actually changed, so the newest backup of a file can be several
+generations old and differing from it proves nothing. On 2026-09-10 the
+widget HTML differed from its newest backup by exactly one character -
+`v15.51` versus `v15.53`, i.e. a different source version entirely - while
+the script's own (correct) verdict against the real previous export was
+unchanged.
+
 ### Customizations
 
 Four are applied here. The `h1`-to-`h3` conversion and the `h1` CSS mirroring
@@ -277,11 +299,27 @@ This avoids manual updates when upstream changes the version number.
 
 After an upstream sync, confirm the source file still matches upstream exactly:
 
-    git rev-parse upstream/main:tools/ysfc_forge_library_builder_v15_46.html
-    git rev-parse itb-custom:tools/ysfc_forge_library_builder_v15_46.html
+    f=$(ls tools/ysfc_forge_library_builder_v*.html)
+    git rev-parse upstream/main:$f
+    git rev-parse itb-custom:$f
+    git hash-object $f          # the working copy too
 
-The two hashes must be identical. If they are not, the source file has been
-modified and should be restored from `upstream/main`.
+All three must be identical.
+
+**A mismatch does not automatically mean the source was edited.** Check the
+direction first:
+
+    git log f435d64..upstream/main -- $f     # replace with your merge base
+
+- **Upstream has commits you don't** - you are simply behind. Sync and
+  rebuild; nothing is wrong. This is the normal case after one of the fork's
+  own PRs is merged upstream.
+- **No upstream commits, yet the blob differs** - *then* the source file has
+  been modified locally and should be restored from `upstream/main`.
+
+Note that switching to a work branch that patches this file and back again
+leaves a fresh mtime on an unchanged file, so **timestamps are not evidence
+of staleness** - compare hashes, not dates.
 
 ## Testing the output
 
