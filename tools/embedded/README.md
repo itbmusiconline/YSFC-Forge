@@ -36,13 +36,17 @@ CSS is injected via <script>)
 ### build-library-embedded.ps1
 Generates:
 - ysfc-library-builder-embed.html  (paste into the Elementor HTML widget, ~44 KB)
-- ysfc-library-builder.js          (upload to the web server, ~441 KB)
+- ysfc-library-builder.js          (upload to the web server, ~690 KB as of v15.91)
 
 The recommended build. CSS and markup stay inline in the widget; only the
-JavaScript is externalised, so the widget drops from ~495 KB to ~44 KB while
-still rendering styled immediately.
+JavaScript is externalised, so the widget drops from ~733 KB to ~44 KB while
+still rendering styled immediately. (The JS grew from ~441 KB at v15.53 to
+~690 KB at v15.91 with upstream's classic-import work - sizes are a moving
+target, not a check.)
 
-Confirmed working on the live site 2026-08-31.
+Confirmed working on the live site 2026-08-31 (v15.53). Re-deployed and
+verified live 2026-09-30 (v15.91): the served JS was byte-identical to the
+local build, and every widget line was present on the page.
 
 *Replaced `build-embedded.ps1`*, which split the CSS out into its own file and
 so produced a `-body.html` that rendered as unstyled plain text unless the
@@ -94,6 +98,38 @@ The filename is fixed rather than version-stamped, so updating means replacing
 one file and never re-pasting the widget. The trade-off is that cache
 freshness relies on the server revalidating - **purge the CDN after each
 update** if you use one.
+
+**That revalidation does not happen by default.** Checked 2026-09-30: the
+site served these files with `Cache-Control: private, max-age=604800`, so a
+returning visitor's browser reused its cached copy for up to 7 days without
+asking, and ran the previous build even after an upload. It is fixed by an
+`.htaccess` in `/wp-content/uploads/ysfc-forge/` (Apache; scoped to that
+folder only):
+
+    <IfModule mod_expires.c>
+        ExpiresActive Off
+    </IfModule>
+    <IfModule mod_headers.c>
+        <FilesMatch "\.js$">
+            Header set Cache-Control "no-cache"
+            Header unset Expires
+        </FilesMatch>
+    </IfModule>
+
+`no-cache` still caches; it only forces a check first, and the server's
+`Last-Modified` turns an unchanged file into a `304` with no body. Verified
+live after upload: both files return `no-cache`, a conditional request gets
+`304` with 0 bytes, and the `.htaccess` itself is refused with `403`.
+
+**If the site moves host or the folder is recreated, re-check the header** -
+the file is easy to lose because file managers hide dot-files:
+
+    curl -sI https://itb-music.online/wp-content/uploads/ysfc-forge/ysfc-library-builder.js
+
+A stale cached JS paired with a newer widget is harmless while upstream only
+changes code, as on 2026-09-30 (the widgets differed by their version label
+alone). It would break the moment upstream renames an element ID the script
+looks up - which is the real reason to keep this header in place.
 
 ### Knowing what to update
 
@@ -286,25 +322,46 @@ The split builds also back up **only the file that actually changed**, so an
 unchanged .js does not accumulate identical copies.
 
 ## Source File
-Both scripts automatically detect the latest upstream file matching:
-ysfc_forge_library_builder_v*.html
-This avoids manual updates when upstream changes the version number.
+Each script automatically detects the latest upstream file in `tools/`:
+the two Library Builder scripts match `ysfc_forge_library_builder_v*.html`,
+`build-sysex-embedded.ps1` matches `ysfc_forge_sysex_converter_v*.html`.
+This avoids manual updates when upstream changes the version number. Upstream
+renames the file on every version, so after a sync only the new one exists and
+the scripts cannot pick up a stale copy.
 
 ## Workflow
-1. Update main from upstream  
-2. Rebase itb-custom  
-3. Run the scripts in this folder  
-4. Check that all six `itb-custom:` lines appear with no warnings  
-5. Use the generated files in your HTML/JS container
+1. Fetch upstream and fast-forward `main` to `upstream/main`. `main` carries
+   no commits of its own, so this is always a fast-forward; it can be done
+   without checking `main` out (`git push . upstream/main:main`), which matters
+   because `tools/embedded/` does not exist on `main`.
+2. Merge `main` into `itb-custom` (a merge, not a rebase - `itb-custom` is
+   pushed, so its history is not rewritten).
+3. Verify every tracked upstream tool is byte-identical to upstream - see
+   below. Do not trust "merge succeeded" on its own.
+4. Run the three scripts in this folder.
+5. Check every `itb-custom:` line appears with no warnings - six per Library
+   Builder script, four for the SysEx script - and that the h1 mirror count
+   still reads 5.
+6. For each file the change report calls CHANGED, confirm it is real (see
+   "Known false positive: line endings" and "Compare against the right
+   baseline" above) before re-uploading or re-pasting.
+7. Deploy, then verify the live site serves exactly the new build: fetch each
+   `.js` from `/wp-content/uploads/ysfc-forge/` (also with a `?nocache=`
+   query), compare its hash with the local file, check the widget's version
+   label on the page, and confirm the response still carries
+   `Cache-Control: no-cache`.
 
 After an upstream sync, confirm the source file still matches upstream exactly:
 
-    f=$(ls tools/ysfc_forge_library_builder_v*.html)
-    git rev-parse upstream/main:$f
-    git rev-parse itb-custom:$f
-    git hash-object $f          # the working copy too
+    for f in tools/*.html; do
+      echo "$f"
+      git rev-parse upstream/main:$f
+      git rev-parse itb-custom:$f
+      git hash-object $f        # the working copy too
+    done
 
-All three must be identical.
+For every tool, all three must be identical (last done 2026-09-30, after the
+v15.91 / v1.69 sync: all four tools identical).
 
 **A mismatch does not automatically mean the source was edited.** Check the
 direction first:
