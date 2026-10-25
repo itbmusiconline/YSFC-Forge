@@ -176,6 +176,21 @@ if ($markup -match $brandPattern) {
     Write-Warning "itb-custom: could not find the expected '<div class=`"brand`">YSFC Forge SysEx Converter' heading to link. Upstream markup may have changed."
 }
 
+# -- itb-custom patch 5: load the IBM Plex fonts ----------------------------
+# Upstream's CSS names IBM Plex Mono / IBM Plex Sans but never loads them, so
+# the browser fell back to Consolas and the system font and every text looked
+# smaller than in the Library Builder. This is the Library Builder's own
+# @import line; it must be the first rule of the stylesheet.
+$fontImport = "@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');"
+if ($styleContent -match 'fonts\.googleapis\.com') {
+    Write-Warning "itb-custom: upstream's CSS already loads a Google font. Skipping the IBM Plex import - check whether this patch is still needed."
+} elseif ($styleContent -match 'IBM Plex') {
+    $styleContent = $fontImport + "`n" + $styleContent
+    Write-Host "itb-custom: IBM Plex fonts loaded (Google Fonts @import)."
+} else {
+    Write-Warning "itb-custom: upstream's CSS no longer names IBM Plex. Skipping the font import - check which fonts it uses now."
+}
+
 # -- Build the widget fragment ----------------------------------------------
 $jsUrl = ($JsBaseUrl.TrimEnd('/')) + "/ysfc-sysex-converter.js"
 
@@ -185,7 +200,8 @@ $embeddedHtml = @"
 YSFC Forge SysEx Converter
 Original work: Copyright (c) 2026 Johan Adolfsson
 Modifications: Copyright (c) 2026 Kalin Mirchev, ITB Music Online
-  English default, linked header, embeddable fragment with external JS.
+  English default, linked header, IBM Plex fonts loaded, embeddable
+  fragment with external JS.
   Functionality unchanged.
 
 Licensed under the MIT License

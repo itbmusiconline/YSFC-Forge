@@ -167,7 +167,7 @@ unchanged.
 
 ### Customizations
 
-Four are applied here. The `h1`-to-`h3` conversion and the `h1` CSS mirroring
+Five are applied here. The `h1`-to-`h3` conversion and the `h1` CSS mirroring
 do not apply - the converter has no `<h1>`, its heading is a
 `<div class="brand">` - and there is no `.seltable-wrap`.
 
@@ -181,6 +181,12 @@ do not apply - the converter has no `<h1>`, its heading is a
 4. **"YSFC Forge" in the header linked to the GitHub project.** The link uses
    `class="ver"`, which `.brand .ver` already colours with the accent, so no
    companion CSS rule is needed here.
+5. **IBM Plex fonts loaded.** Upstream's CSS names IBM Plex Mono / Sans but
+   never loads them, so on the site the browser fell back to Consolas and the
+   system font and all text looked smaller than in the Library Builder
+   (measured 2026-10-25: header text 495 -> 536 px wide once loaded). The
+   patch prepends the Library Builder's own Google Fonts `@import`. It skips
+   with a warning if upstream starts loading a Google font itself.
 
 ### Bare element selectors leak into the host page
 
@@ -340,7 +346,7 @@ the scripts cannot pick up a stale copy.
    below. Do not trust "merge succeeded" on its own.
 4. Run the three scripts in this folder.
 5. Check every `itb-custom:` line appears with no warnings - six per Library
-   Builder script, four for the SysEx script - and that the h1 mirror count
+   Builder script, five for the SysEx script - and that the h1 mirror count
    still reads 5.
 6. For each file the change report calls CHANGED, confirm it is real (see
    "Known false positive: line endings" and "Compare against the right
