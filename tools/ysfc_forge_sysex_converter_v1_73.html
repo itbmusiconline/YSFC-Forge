@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>YSFC Forge SysEx Converter v1.69</title>
+<title>YSFC Forge SysEx Converter v1.73</title>
 <style>
 :root{
   --bg:#0f1117;--bg2:#161b24;--bg3:#1e2535;--border:#2a3347;--border-hi:#3d5080;
@@ -132,7 +132,7 @@ input[type=number]:focus,select.filter-select:focus{outline:none;border-color:va
 </head>
 <body>
 <header>
-  <div class="brand">YSFC Forge SysEx Converter <span class="sep">│</span> <span class="ver">v1.69</span>
+  <div class="brand">YSFC Forge SysEx Converter <span class="sep">│</span> <span class="ver">v1.73</span>
     <span class="sep">│</span> Soundmondo SysEx → Y2L
   </div>
   <div class="spacer"></div>
@@ -155,8 +155,8 @@ input[type=number]:focus,select.filter-select:focus{outline:none;border-color:va
     <section class="card">
       <div class="card-header"><span data-i18n="load">Ladda SysEx</span><span class="badge info">LOCAL</span></div>
       <div class="drop" id="drop">
-        <input id="files" type="file" accept=".syx,.SYX" multiple>
-        <div class="drop-title" data-i18n="dropTitle">Dra & släpp Soundmondo .syx-filer här</div>
+        <input id="files" type="file" accept=".syx,.SYX,.x7b,.X7B,.x8b,.X8B" multiple>
+        <div class="drop-title" data-i18n="dropTitle">Dra & släpp Soundmondo .syx- eller Connect .X7B/.X8B-filer här</div>
         <div class="drop-sub" data-i18n="dropSub">eller klicka för att bläddra — allt sker lokalt i webbläsaren</div>
       </div>
       <div class="progress-panel hidden" id="importProgress">
@@ -273,7 +273,7 @@ input[type=number]:focus,select.filter-select:focus{outline:none;border-color:va
       <div class="card-header"><span data-i18n="check">Exportkontroll</span></div>
       <div class="statusbox" id="status">
         <span class="badge warn">WAIT</span>
-        <span data-i18n="waiting">Ladda en .syx-fil för att börja.</span>
+        <span data-i18n="waiting">Ladda en .syx-, .X7B- eller .X8B-fil för att börja.</span>
       </div>
       <ul class="warnlist" id="warnings" style="margin-top:10px">
         <li data-i18n="local">Inga filer laddas upp.</li>
@@ -339,6 +339,8 @@ input[type=number]:focus,select.filter-select:focus{outline:none;border-color:va
 <div class="footer">YSFC Forge · standalone browser tool · local processing only</div>
 
 <script>
+// v1.73 baseline: Kalin PR #13 + #14 applied in order; cutoff quantisation updated to reconstructed 47/134/227 rule.
+
 'use strict';
 
 const BLOCK_TABLES = {"legacy":{"source":"Yamaha MONTAGE/MODX/MODX+ Data List - MIDI Data Table / Bulk Dump Block","group":"7F 1C","model_ids":["02","07"],"address_bytes":3,"rules":[{"pattern":"00 7F 00","name":"Soundmondo metadata (semantics undocumented)","category":"soundmondo_metadata","data_length":4,"source_status":"observed_undocumented"},{"pattern":"0E mm nn","name":"Performance Bulk Header","category":"bulk_header","data_length":0,"source_status":"yamaha_documented"},{"pattern":"0F mm nn","name":"Performance Bulk Footer","category":"bulk_footer","data_length":0,"source_status":"yamaha_documented"},{"pattern":"30 40 00","name":"Performance Common","category":"performance_common","data_length":94,"text":"ascii","text_slice":[0,20],"decoded_field":"performance_name","source_status":"yamaha_documented"},{"pattern":"30 41 00","name":"Reverb","category":"performance_common","data_length":71,"source_status":"yamaha_documented"},{"pattern":"30 42 00","name":"Variation","category":"performance_common","data_length":72,"source_status":"yamaha_documented"},{"pattern":"30 43 00","name":"Insertion A for A/D","category":"performance_common","data_length":68,"source_status":"yamaha_documented"},{"pattern":"30 44 00","name":"Insertion B for A/D","category":"performance_common","data_length":68,"source_status":"yamaha_documented"},{"pattern":"30 45 00","name":"Master EQ","category":"performance_common","data_length":21,"source_status":"yamaha_documented"},{"pattern":"30 46 00","name":"Master Effect","category":"performance_common","data_length":72,"source_status":"yamaha_documented"},{"pattern":"30 47 00","name":"Arpeggio Common","category":"performance_common","data_length":13,"source_status":"yamaha_documented"},{"pattern":"30 48 00","name":"Motion Seq Common Settings","category":"performance_common","data_length":6,"source_status":"yamaha_documented"},{"pattern":"30 49 00","name":"Motion Seq AD Part Lane Settings","category":"performance_common","data_length":64,"source_status":"yamaha_documented"},{"pattern":"30 4A 00","name":"Super Knob Lane Settings","category":"performance_common","data_length":15,"source_status":"yamaha_documented"},{"pattern":"30 4B 00","name":"Super Knob Settings","category":"performance_common","data_length":28,"source_status":"yamaha_documented"},{"pattern":"30 4C 00","name":"Scene Common","category":"performance_common","data_length":128,"source_status":"yamaha_documented"},{"pattern":"30 4D 00","name":"Audition","category":"performance_common","data_length":4,"source_status":"yamaha_documented"},{"pattern":"30 4E 00","name":"Audio In Part1 (A/D)","category":"performance_common","data_length":28,"source_status":"yamaha_documented"},{"pattern":"30 4F 00","name":"Audio In Part2 (USB)","category":"performance_common","data_length":23,"source_status":"yamaha_documented"},{"pattern":"30 50 00","name":"Assignable Knob Name","category":"performance_common","data_length":128,"source_status":"yamaha_documented"},{"pattern":"30 51 00","name":"Common/AD Controller 1-13","category":"performance_common","data_length":117,"source_status":"yamaha_documented"},{"pattern":"30 52 00","name":"Common/AD Controller 14-16","category":"performance_common","data_length":27,"source_status":"yamaha_documented"},{"pattern":"30 lm 00","name":"Motion Seq AD Part Lane Sequence","category":"performance_common","data_length":50,"captures":{"l":[0,3],"m":[0,7]},"source_status":"yamaha_documented"},{"pattern":"30 6m 00","name":"Super Knob Sequence","category":"performance_common","data_length":50,"captures":{"m":[0,7]},"source_status":"yamaha_documented"},{"pattern":"31 0p 00","name":"Performance Part","category":"performance_part","data_length":121,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"31 1p 00","name":"Motion Seq Part/Lane Settings","category":"performance_part","data_length":64,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"31 2p 00","name":"Insertion A","category":"performance_part","data_length":68,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"31 3p 00","name":"Insertion B","category":"performance_part","data_length":68,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"31 4p 00","name":"LFO","category":"performance_part","data_length":39,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"31 5p 00","name":"Zone Setting","category":"performance_part","data_length":17,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"31 6p 00","name":"Arpeggio Part","category":"performance_part","data_length":92,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"37 0p 00","name":"Assignable Knob Name","category":"performance_part","data_length":128,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"38 0p 00","name":"Controller 1-13","category":"performance_part","data_length":117,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"38 1p 00","name":"Controller 14-16","category":"performance_part","data_length":27,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"32 sp 00","name":"Motion Seq Lane 1 Sequence","category":"performance_part","data_length":50,"captures":{"s":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"33 sp 00","name":"Motion Seq Lane 2 Sequence","category":"performance_part","data_length":50,"captures":{"s":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"34 sp 00","name":"Motion Seq Lane 3 Sequence","category":"performance_part","data_length":50,"captures":{"s":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"35 sp 00","name":"Motion Seq Lane 4 Sequence","category":"performance_part","data_length":50,"captures":{"s":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"36 cp 00","name":"Scene Part","category":"performance_part","data_length":26,"captures":{"c":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"41 ep 00","name":"Oscillator + Amplitude + Pitch","category":"normal_part_element","data_length":103,"captures":{"e":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"42 ep 00","name":"Filter + EQ + LFO","category":"normal_part_element","data_length":70,"captures":{"e":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"5p kk 00","name":"Drum Key","category":"drum_part_key","data_length":47,"captures":{"p":[0,15],"kk":[0,72]},"source_status":"yamaha_documented"},{"pattern":"48 0p 00","name":"FM-X Common","category":"fmx_part","data_length":86,"captures":{"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"49 op 00","name":"FM-X Operator","category":"fmx_part","data_length":47,"captures":{"o":[0,7],"p":[0,15]},"source_status":"yamaha_documented"},{"pattern":"30 70 00","name":"Performance Common extension 70 (semantics undocumented)","category":"performance_common_extension","data_length":4,"source_status":"observed_undocumented"},{"pattern":"30 71 00","name":"Performance Common extension 71 (semantics undocumented)","category":"performance_common_extension","data_length":4,"source_status":"observed_undocumented"}],"source_documents":["Yamaha MONTAGE Data List (MIDI Data Format pp. 190-193; MIDI Data Table/Bulk Dump around pp. 194-196)","Yamaha MODX Data List (MIDI Data Format pp. 186-189; MIDI Data Table/Bulk Dump around pp. 190-192)","Yamaha MODX+ Data List (MIDI Data Format pp. 186-189; MIDI Data Table/Bulk Dump around pp. 190-192)"],"notes":["Model ID 02 (MONTAGE) and 07 (MODX/MODX+) use three address bytes ah/am/al.","The supplied MONTAGE, MODX and MODX+ Data Lists document the same Performance block address families used by this table.","Rules marked observed_undocumented occur in all supplied MODX+ Soundmondo test files but are not named in the supplied MODX+ Data List."]},"m_generation":{"source":"Yamaha MODX M Data List, firmware 3.00, MIDI Data Table / Bulk Dump Block, pp. 219-222","group":"7F 1C","model_id":"0D","rules":[{"category":"performance","name":"Performance Part Bulk Header","pattern":"04 04 01 nn","data_length":0,"captures":{"nn":[0,127]}},{"category":"performance","name":"Performance Common Bulk Header","pattern":"04 04 02 00","data_length":0},{"category":"performance","name":"Performance Bulk Header","pattern":"04 ll mm nn","data_length":0},{"category":"performance","name":"Performance Part Bulk Footer","pattern":"05 04 01 nn","data_length":0,"captures":{"nn":[0,127]}},{"category":"performance","name":"Performance Common Bulk Footer","pattern":"05 04 02 00","data_length":0},{"category":"performance","name":"Performance Bulk Footer","pattern":"05 ll mm nn","data_length":0},{"category":"performance","name":"Soundmondo Format Version","pattern":"00 00 7F 00","data_length":6},{"category":"performance_common","name":"Performance Name","pattern":"06 00 00 00","data_length":20,"text":"ascii"},{"category":"performance_common","name":"Performance Common 1byte param","pattern":"06 00 01 00","data_length":29},{"category":"performance_common","name":"Performance Common 2byte param","pattern":"06 00 02 00","data_length":86,"soundmondo_lengths":{"1.0.0":84}},{"category":"performance_common","name":"Performance Common Controller","pattern":"06 00 03 00","data_length":86,"soundmondo_lengths":{"1.0.0":84}},{"category":"performance_common","name":"Insertion A for A/D","pattern":"06 00 04 00","data_length":52},{"category":"performance_common","name":"Insertion B for A/D","pattern":"06 00 05 00","data_length":52},{"category":"performance_common","name":"Arpeggio Common","pattern":"06 00 06 00","data_length":14},{"category":"performance_common","name":"Reverb","pattern":"06 00 07 00","data_length":52},{"category":"performance_common","name":"Variation","pattern":"06 00 08 00","data_length":52},{"category":"performance_common","name":"VCM Rotary Speaker","pattern":"06 00 09 00","data_length":68},{"category":"performance_common","name":"Master EQ","pattern":"06 00 0A 00","data_length":34},{"category":"performance_common","name":"Master Effect","pattern":"06 00 0B 00","data_length":52},{"category":"performance_common","name":"Motion Seq Common Settings","pattern":"06 00 0C 00","data_length":12},{"category":"performance_common","name":"Super Knob Settings","pattern":"06 00 0D 00","data_length":90},{"category":"performance_common","name":"Audio In Parts (A/D)","pattern":"06 00 0E 00","data_length":42},{"category":"performance_common","name":"Audio In Parts (USB)","pattern":"06 00 0F 00","data_length":14},{"category":"performance_common","name":"FM-X Smart Morph Data (File Dump)","pattern":"06 00 10 00","data_length":3004},{"category":"performance_common","name":"FM-X Smart Morph PNG Data (File Dump)","pattern":"06 00 11 00","data_length":3000},{"category":"performance_common","name":"Super Knob Lane Settings","pattern":"06 00 12 00","data_length":20},{"category":"performance_common","name":"AN-X Smart Morph Data (File Dump)","pattern":"06 00 20 00","data_length":3004},{"category":"performance_common","name":"AN-X Smart Morph PNG Data (File Dump)","pattern":"06 00 21 00","data_length":3000},{"category":"performance_common","name":"Super Knob Sequence","pattern":"06 01 0m 00","data_length":102,"captures":{"m":[0,7]}},{"category":"performance_common","name":"Scene 1-8 Common 1byte","pattern":"06 02 0c 00","data_length":19,"captures":{"c":[0,7]},"soundmondo_lengths":{"1.0.0":18}},{"category":"performance_common","name":"Scene 1-8 Common 2byte","pattern":"06 03 0c 00","data_length":44,"captures":{"c":[0,7]}},{"category":"performance_common","name":"Assignable Knob Name","pattern":"06 04 0k 00","data_length":16,"captures":{"k":[0,7]},"text":"ascii"},{"category":"performance_common","name":"Common/AD Controller Box 1-32","pattern":"06 05 bb 00","data_length":16,"captures":{"bb":[0,31]},"soundmondo_lengths":{"1.2.0":18,"1.0.0":18}},{"category":"performance_common","name":"Motion Seq AD Part Lane Settings 1byte","pattern":"06 06 L0 00","data_length":4,"captures":{"L":[0,3]}},{"category":"performance_common","name":"Motion Seq AD Part Lane Settings 2byte","pattern":"06 07 L0 00","data_length":20,"captures":{"L":[0,3]}},{"category":"performance_common","name":"Motion Seq AD Part Lane Sequence","pattern":"06 08 Lm 00","data_length":102,"captures":{"L":[0,3],"m":[0,7]}},{"category":"performance_common","name":"Performance Flag","pattern":"06 09 00 00","data_length":8},{"category":"performance_part","name":"Performance Part Name","pattern":"1p 00 00 00","data_length":20,"captures":{"p":[0,15]},"text":"ascii"},{"category":"performance_part","name":"Performance Part 1byte","pattern":"1p 00 01 00","data_length":81,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Performance Part 2byte","pattern":"1p 00 02 00","data_length":94,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Performance Part 2byte Pitch/Effect","pattern":"1p 00 03 00","data_length":62,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Insertion A","pattern":"1p 00 04 00","data_length":52,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Insertion B","pattern":"1p 00 05 00","data_length":52,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Arpeggio Part","pattern":"1p 00 06 00","data_length":100,"captures":{"p":[0,15]},"soundmondo_lengths":{"1.0.0":84}},{"category":"performance_part","name":"LFO","pattern":"1p 00 07 00","data_length":68,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Zone Setting","pattern":"1p 00 08 00","data_length":26,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Key Controller Box","pattern":"1p 00 09 00","data_length":64,"captures":{"p":[0,15]}},{"category":"performance_part","name":"Scene Part","pattern":"1p 03 0c 00","data_length":80,"captures":{"p":[0,15],"c":[0,7]},"soundmondo_lengths":{"1.0.0":64}},{"category":"performance_part","name":"Assignable Knob Name","pattern":"1p 04 0k 00","data_length":16,"captures":{"p":[0,15],"k":[0,7]},"text":"ascii"},{"category":"performance_part","name":"Controller 1-32","pattern":"1p 05 bb 00","data_length":18,"captures":{"p":[0,15],"bb":[0,31]}},{"category":"performance_part","name":"Motion Seq Part/Lane Settings 1byte","pattern":"1p 06 L0 00","data_length":4,"captures":{"p":[0,15],"L":[0,3]}},{"category":"performance_part","name":"Motion Seq Part/Lane Settings 2byte","pattern":"1p 07 L0 00","data_length":20,"captures":{"p":[0,15],"L":[0,3]}},{"category":"performance_part","name":"Motion Seq Lane Sequence","pattern":"1p 08 Lm 00","data_length":102,"captures":{"p":[0,15],"L":[0,3],"m":[0,7]}},{"category":"normal_part_element","name":"Element 1byte","pattern":"2p 00 ee 00","data_length":36,"captures":{"p":[0,15],"ee":[0,127]},"soundmondo_lengths":{"1.2.0":43,"1.0.0":43}},{"category":"normal_part_element","name":"Oscillator","pattern":"2p 01 ee 00","data_length":40,"captures":{"p":[0,15],"ee":[0,127]}},{"category":"normal_part_element","name":"Amplitude","pattern":"2p 02 ee 00","data_length":54,"captures":{"p":[0,15],"ee":[0,127]}},{"category":"normal_part_element","name":"Pitch","pattern":"2p 03 ee 00","data_length":48,"captures":{"p":[0,15],"ee":[0,127]}},{"category":"normal_part_element","name":"Filter + EQ + LFO","pattern":"2p 04 ee 00","data_length":106,"captures":{"p":[0,15],"ee":[0,127]},"soundmondo_lengths":{"1.2.0":108,"1.0.0":108}},{"category":"drum_part_key","name":"Key","pattern":"2p 10 kk 00","data_length":64,"captures":{"p":[0,15],"kk":[0,72]}},{"category":"fmx_part","name":"FM-X Part Common","pattern":"3p 00 00 00","data_length":82,"captures":{"p":[0,15]}},{"category":"fmx_part","name":"FM-X Filter","pattern":"3p 00 01 00","data_length":70,"captures":{"p":[0,15]}},{"category":"fmx_part","name":"FM-X Controller Box Switch","pattern":"3p 01 0o 00","data_length":39,"captures":{"p":[0,15],"o":[0,7]},"soundmondo_lengths":{"1.0.0":36}},{"category":"fmx_part","name":"FM-X Operator","pattern":"3p 02 0o 00","data_length":76,"captures":{"p":[0,15],"o":[0,7]},"soundmondo_lengths":{"1.0.0":70}},{"category":"anx_part","name":"AN-X Part Common","pattern":"4p 00 00 00","data_length":110,"captures":{"p":[0,15]}},{"category":"anx_part","name":"AN-X Oscillator Controller Box Switch","pattern":"4p 01 0o 00","data_length":39,"captures":{"p":[0,15],"o":[0,2]},"soundmondo_lengths":{"1.0.0":36}},{"category":"anx_part","name":"AN-X Oscillator","pattern":"4p 02 0o 00","data_length":78,"captures":{"p":[0,15],"o":[0,2]},"soundmondo_lengths":{"1.0.0":72}},{"category":"anx_part","name":"AN-X Filter Controller Box Switch","pattern":"4p 03 0f 00","data_length":39,"captures":{"p":[0,15],"f":[0,1]},"soundmondo_lengths":{"1.0.0":36}},{"category":"anx_part","name":"AN-X Filter","pattern":"4p 04 0f 00","data_length":30,"captures":{"p":[0,15],"f":[0,1]},"soundmondo_lengths":{"1.0.0":24}},{"category":"anx_part","name":"AN-X Wave Folder","pattern":"4p 05 00 00","data_length":34,"captures":{"p":[0,15]}}],"notes":["documented data_length values come from Yamaha MODX M Data List firmware 3.00 Bulk Dump Block table","soundmondo_lengths are empirical overrides observed consistently in the supplied Soundmondo test corpus; they are kept separate from Yamaha documented sizes"]}};
@@ -355,10 +357,10 @@ const M_WAVEFORM_NAMES = {"1":"CFX v01 St","2":"CFX v02 St","3":"CFX v03 St","4"
 const L={
  sv:{
   import:'Importera',inspect:'Kontrollera',export:'Exportera',load:'Ladda SysEx',
-  dropTitle:'Dra & släpp Soundmondo .syx-filer här',dropSub:'eller klicka för att bläddra — allt sker lokalt i webbläsaren',
+  dropTitle:'Dra & släpp Soundmondo .syx- eller Connect .X7B/.X8B-filer här',dropSub:'eller klicka för att bläddra — allt sker lokalt i webbläsaren',
   loaded:'Inlästa filer',filename:'Filnamn',size:'Storlek',engine:'Motor',none:'Inga filer inlästa.',
   perf:'Performance',selectFile:'Välj en inläst SysEx-fil för att visa analysen.',perfName:'Performance-namn',
-  waveforms:'Waveforms',remap:'Waveform-remap',check:'Exportkontroll',waiting:'Ladda en .syx-fil för att börja.',
+  waveforms:'Waveforms',remap:'Waveform-remap',check:'Exportkontroll',waiting:'Ladda en .syx-, .X7B- eller .X8B-fil för att börja.',
   local:'Inga filer laddas upp.',safe:'Originalfilen ändras aldrig.',
   unresolved:'Olösta preset-waveforms varnas och direktkopieras aldrig tyst.',
   outname:'Filnamn (utan ändelse)',convert:'Konvertera och spara .Y2L',clear:'Rensa',
@@ -386,10 +388,10 @@ const L={
  },
  en:{
   import:'Import',inspect:'Inspect',export:'Export',load:'Load SysEx',
-  dropTitle:'Drop Soundmondo .syx files here',dropSub:'or click to browse — all processing stays local in your browser',
+  dropTitle:'Drop Soundmondo .syx or Connect .X7B/.X8B files here',dropSub:'or click to browse — all processing stays local in your browser',
   loaded:'Loaded files',filename:'Filename',size:'Size',engine:'Engine',none:'No files loaded.',
   perf:'Performance',selectFile:'Select a loaded SysEx file to inspect it.',perfName:'Performance name',
-  waveforms:'Waveforms',remap:'Waveform remap',check:'Export check',waiting:'Load a .syx file to begin.',
+  waveforms:'Waveforms',remap:'Waveform remap',check:'Export check',waiting:'Load a .syx, .X7B or .X8B file to begin.',
   local:'No files are uploaded.',safe:'The original file is never modified.',
   unresolved:'Unresolved preset waveforms are reported and never silently copied by number.',
   outname:'Filename (without extension)',convert:'Convert and save .Y2L',clear:'Clear',
@@ -690,7 +692,8 @@ const BLOB_ENGINE=Object.freeze({AWM2:0,Drum:1,FMX:2,ANX:3});
 // - Connection: 31 0p 00 +0x3B -> Part Common +232
 // - Ins A/B Type/Subtype from source MSB/LSB -> target LSB/MSB bytes
 // - first 15 raw u14 parameters -> verified modern parameter cells
-// - parameters 16..24 remain intentionally deferred (target cells unknown)
+// - parameters 16..24 remain intentionally deferred (target cells unknown;
+//   since written, see writeLegacyInsertionFxToPartBlock)
 // - mapping previously regression-tested on 40 legacy AWM2 Performances:
 //   183 Parts / 366 slots / 285 active / zero active mapping mismatches
 // Candidate pending ESP regression verification.
@@ -1321,9 +1324,10 @@ function decodeLegacyInsertionSidechains(parsed,sourcePartNo){
 // Modern Part Common:
 //   Connection = +232 (u16LE)
 //   Ins A Type/Subtype = +282/+283
-//   Ins A Param1..15  = +286,+288,...,+314 (u16LE)
+//   Ins A Param1..24  = +286,+288,...,+332 (u16LE)
 //   Ins B Type/Subtype = +338/+339
-//   Ins B Param1..15  = +342,+344,...,+370 (u16LE)
+//   Ins B Param1..24  = +342,+344,...,+388 (u16LE)
+// Params 16..24 follow Param 15 (ESP-verified with Vocoder BPF2..BPF10 Gain).
 //
 // Yamaha effect identity is MSB*128+LSB. Modern serialized bytes are
 // Type=source LSB, Subtype=source MSB.
@@ -1345,7 +1349,7 @@ function writeLegacyInsertionFxToPartBlock(parsed,partBlock,sourcePartNo){
     partBlock[typeRel+1]=d[0]&0x7F;     // source MSB
 
     let written=2;
-    for(let i=0;i<15;i++){
+    for(let i=0;i<24;i++){
       const so=3+i*2;
       if(so+1>=d.length)break;
       const raw=((d[so]&0x7F)<<7)|(d[so+1]&0x7F);
@@ -1373,6 +1377,7 @@ function writeLegacyInsertionFxToPartBlock(parsed,partBlock,sourcePartNo){
 //   target[0] = source[1]   // Type low / modern Type
 //   target[1] = source[0]   // Type high / modern Subtype
 //   target[2:52] = source[2:52]
+//   (superseded for parameters: see writeFx52 below)
 //
 // This reproduces the direct Yamaha WebMIDI Y2L byte-for-byte for the
 // supplied legacy MODX source.  Legacy-only tail fields (return/pan/switch,
@@ -1395,7 +1400,12 @@ function writeLegacyPerformanceGlobalFx(parsed,common){
     const d=msg.data;
     common[targetOff+0]=d[1]&0x7F;
     common[targetOff+1]=d[0]&0x7F;
-    common.set(d.slice(2,52),targetOff+2);
+    // +2 Preset; Parameter 1..24 are MSB/LSB pairs at +3..+50 -> u16LE at
+    // +4..+50. A byte copy breaks values >= 128 (ESP-verified: 29/88 -> 3800).
+    common[targetOff+2]=d[2]&0x7F;
+    common[targetOff+3]=0;
+    for(let k=0;k<24;k++)
+      writeU16LE(common,targetOff+4+k*2,((d[3+k*2]&0x7F)<<7)|(d[4+k*2]&0x7F));
     return true;
   };
 
@@ -1438,6 +1448,28 @@ function writeLegacyPerformanceGlobalFx(parsed,common){
   };
 }
 
+// Legacy knob value 0..127 -> M 0..1023: x8, plus one step per 8 above 64
+// (64->512, 77->617, 127->1023). ESP-verified on 20 values.
+function legacyKnobValueToModern(v){
+  v&=0x7F;
+  return v*8+(v>64?(v-64)>>3:0);
+}
+
+// Legacy Filter / HPF Cutoff 0..255 -> M 0..1023, AWM2, FM-X and Drum alike.
+// 2026-10-31 reconstructed Yamaha quantisation rule, selected for production:
+//   0..46    -> 4*v
+//   47..133  -> 4*v + 1
+//   134..226 -> 4*v + 2
+//   227..255 -> 4*v + 3
+// Corpus fit: 1886 / 1910 high-confidence observations (98.74%).
+function legacyCutoffToModern(v){
+  v=Math.max(0,Math.min(255,v|0));
+  return (v<<2)
+       + (v>=47  ? 1 : 0)
+       + (v>=134 ? 1 : 0)
+       + (v>=227 ? 1 : 0);
+}
+
 function writeLegacyPerformanceMasterSwitches(parsed,common){
   if(!(common instanceof Uint8Array)||common.length<124)
     throw new Error('Performance Common buffer too short');
@@ -1454,10 +1486,22 @@ function writeLegacyPerformanceMasterSwitches(parsed,common){
   const ms=findCommon(0x48);
   const rev=findCommon(0x41);
   const vari=findCommon(0x42);
+  const sk=findCommon(0x4B);
 
   // v1.41 — complete verified global Reverb / Variation / Master EQ /
   // Master Effect bodies before applying the legacy tail fields below.
   writeLegacyPerformanceGlobalFx(parsed,common);
+
+  // Super Knob Settings 30 4B 00: +0x00 Super Knob Value -> +670; Knob 1..8
+  // Destination Value 1/2 (+0x01..+0x10) -> +674/+678 + k*6 (M-only cell
+  // between them stays 512). Knob scaling; ESP-verified. +0x11/+0x12 not mapped.
+  if(sk&&sk.data.length>0x10){
+    writeU16LE(common,670,legacyKnobValueToModern(sk.data[0]));
+    for(let k=0;k<8;k++){
+      writeU16LE(common,674+k*6,legacyKnobValueToModern(sk.data[1+k*2]));
+      writeU16LE(common,678+k*6,legacyKnobValueToModern(sk.data[2+k*2]));
+    }
+  }
 
   // Readiness integration: Yamaha-documented legacy Performance Common.
   // Source 30 40 00: Pan +31 (center=64), Tempo +44 u14, Volume +56.
@@ -1466,6 +1510,24 @@ function writeLegacyPerformanceMasterSwitches(parsed,common){
     writeU16LE(common,68,perf.data[56]);                 // Performance Volume
     writeU16LE(common,70,perf.data[31]);                 // Performance Pan
     writeU16LE(common,92,readLegacyU14BE(perf.data,44)); // Performance Tempo
+
+    // Assignable Switch 1/2 Mode, legacy +0x3D/+0x3E -> +30/+31 (ESP-verified).
+    if(perf.data.length>0x3E){
+      common[30]=perf.data[0x3D]&1;
+      common[31]=perf.data[0x3E]&1;
+    }
+    // Keyboard After Touch Mode +55 = Channel: legacy has channel AT only (as ESP).
+    common[55]=1;
+
+    // AEG A/D/S/R, FEG A/D/R/Depth, Cutoff, Resonance offsets: legacy
+    // +0x21..+0x2B (+0x27 reserved) -> +72..+90 (ESP-verified).
+    [0x21,0x22,0x23,0x24,0x25,0x26,0x28,0x29,0x2A,0x2B].forEach((src,i)=>
+      writeU16LE(common,72+i*2,perf.data[src]));
+
+    // Assignable Knob 1..8 values, legacy +0x53..+0x5A -> +184..+198.
+    if(perf.data.length>0x5A)
+      for(let k=0;k<8;k++)
+        writeU16LE(common,184+k*2,legacyKnobValueToModern(perf.data[0x53+k]));
 
     // v1.52 — Legacy Performance Common controller-number bridge.
     // Yamaha legacy 30 40 00 stores these as direct CC numbers.
@@ -1786,10 +1848,12 @@ const LEGACY_PART_CA_DEST_TO_M=Object.freeze({
   2:2,5:5,8:8,11:11,25:25,
   49:50,53:54,54:55,59:60,67:68,74:75,77:78,84:85,85:86
 });
+// The M list inserts "(reserved)" at 49 (MONTAGE M Data List): legacy 49 and
+// up move by one. Agrees with every pair above and with ESP's import.
 function legacyPartCaDestinationToModern(v){
   return Object.prototype.hasOwnProperty.call(LEGACY_PART_CA_DEST_TO_M,v)
     ? LEGACY_PART_CA_DEST_TO_M[v]
-    : v; // retain previous behavior for as-yet-unreconciled destinations
+    : (v>=49 ? v+1 : v);
 }
 
 // v1.43 — Legacy Performance/Common Control Assign.
@@ -1818,17 +1882,34 @@ function legacyPartCaDestinationToModern(v){
 //   active Common destinations:
 //     73->175, 78->180, 79->181,
 //     128->230, 131->233, 136->238
+// ESP import of MODX Performances: 124->226, 125->227, 126->228, 127->229.
 //
-// These are kept as an explicit verified subset. We do NOT generalize
-// "destination +102" to unobserved legacy destinations.
+// Data Lists: legacy 49-251 (Reverb / Variation / Master Effect Params,
+// Part 1-16 Assignable Knobs) = M 151-353, i.e. +102. ESP-verified on 31
+// destinations across the range, so +102 applies to 49-251; 1-48 stay off.
 const LEGACY_COMMON_CA_DEST_TO_M=Object.freeze({
   73:175,
   78:180,
   79:181,
+  124:226,
+  125:227,
+  126:228,
+  127:229,
   128:230,
   131:233,
   136:238
 });
+// Control Assign Ratio 0..127 -> Depth 0..255: floor(v*255/127). Same as x2
+// up to 126; 127 -> 255 as ESP (x2 capped at 254). ESP-verified.
+function legacyRatioToDepth(v){
+  v=Math.max(0,Math.min(127,v|0));
+  return Math.floor(v*255/127);
+}
+function legacyCommonCaDestinationToModern(v){
+  if(Object.prototype.hasOwnProperty.call(LEGACY_COMMON_CA_DEST_TO_M,v))
+    return LEGACY_COMMON_CA_DEST_TO_M[v];
+  return v>=49&&v<=251 ? v+102 : null;
+}
 
 function writeLegacyCommonControlAssign(parsed,common){
   const get=(mid)=>parsed.find(m=>
@@ -1851,19 +1932,19 @@ function writeLegacyCommonControlAssign(parsed,common){
     const legacyDest=((r[1]&0x7F)<<7)|(r[2]&0x7F);
     if(legacyDest===0)continue; // preserve M-generation disabled-row defaults
 
-    if(!Object.prototype.hasOwnProperty.call(LEGACY_COMMON_CA_DEST_TO_M,legacyDest))
-      continue; // fail closed for unreconciled Common destinations
+    const modernDest=legacyCommonCaDestinationToModern(legacyDest);
+    if(modernDest===null)continue; // fail closed for unreconciled Common destinations
 
     const rb=BASE+i*STRIDE;
     writeU16LE(common,rb+1,1);
     writeU16LE(common,rb+3,r[0]);
-    writeU16LE(common,rb+5,LEGACY_COMMON_CA_DEST_TO_M[legacyDest]);
+    writeU16LE(common,rb+5,modernDest);
     writeU16LE(common,rb+7,r[3]);
     writeU16LE(common,rb+9,r[4]);
     writeU16LE(common,rb+11,r[5]);
     writeU16LE(common,rb+13,r[6]);
     writeU16LE(common,rb+15,r[7]);
-    writeU16LE(common,rb+17,Math.max(0,Math.min(254,r[8]*2)));
+    writeU16LE(common,rb+17,legacyRatioToDepth(r[8]));
     written++;
   }
   return written;
@@ -1876,7 +1957,8 @@ function writeLegacyCommonControlAssign(parsed,common){
 //   src +4..+9 -> Arp/MS/SK/Mixing/AEG/ArpMSFX Memorize -> target +0..+5
 //   src +0     -> Arp Select        -> target +21 u16LE
 //   src +1     -> Motion Seq Select -> target +23 u16LE
-//   src +10    -> Super Knob Value  -> target +25 u16LE, legacy 7-bit << 3
+//   src +10    -> Super Knob Value  -> target +25 u16LE, knob scaling
+//                 (legacyKnobValueToModern; << 3 fell short above 64)
 function writeLegacySceneCommonCore(parsed,common){
   const findCommon=(mid)=>parsed.find(x=>x.kind==='bulk_dump'&&x.protocolTable==='legacy'&&
     x.checksumOk&&x.byteCountOk&&x.address?.length===3&&
@@ -1893,6 +1975,17 @@ function writeLegacySceneCommonCore(parsed,common){
   const vari=findCommon(0x42);
   const revReturn=(rev&&rev.data.length>68)?rev.data[68]:null;
   const varReturn=(vari&&vari.data.length>68)?vari.data[68]:null;
+
+  // Legacy Scenes hold no Performance AEG/filter offsets; as ESP, each Scene
+  // gets the Performance's own (Scene rel +35..+47).
+  const perf=findCommon(0x40);
+  const perfOffsets=(perf&&perf.data.length>0x2B)
+    ?[0x2A,0x2B,0x29,0x21,0x22,0x23,0x24].map(o=>perf.data[o])
+    :null;
+
+  // Byte 0 Scene Select -> Performance Common +104 (ESP-verified).
+  writeU16LE(common,104,d[0]&7);
+
   for(let scene=0;scene<8;scene++){
     const so=1+scene*16;
     const to=SHARED_SCENE_COMMON.BASE+scene*SHARED_SCENE_COMMON.STRIDE;
@@ -1903,6 +1996,8 @@ function writeLegacySceneCommonCore(parsed,common){
     common[to+3]=d[so+7]&1; // Mixing Memorize
     common[to+4]=d[so+8]&1; // AEG Memorize
     common[to+5]=d[so+9]&1; // Arp/MS FX Memorize
+    common[to+6]=d[so+11]&1; // Super Knob Link Memorize
+    if(so+14<d.length)common[to+15]=d[so+14]&1; // Keyboard Control Memorize
 
     // v1.67 — direct MODX M Y2L differential mapping.
     // For Scene N, the Master switches are serialized in the two bytes
@@ -1912,9 +2007,10 @@ function writeLegacySceneCommonCore(parsed,common){
 
     writeU16LE(common,to+21,d[so+0]&7);       // Arp Select, 0-based
     writeU16LE(common,to+23,d[so+1]&7);       // Motion Seq Select, 0-based
-    writeU16LE(common,to+25,(d[so+10]&0x7F)<<3); // Super Knob Value
+    writeU16LE(common,to+25,legacyKnobValueToModern(d[so+10])); // Super Knob Value
     if(revReturn!==null)writeU16LE(common,to+31,revReturn);
     if(varReturn!==null)writeU16LE(common,to+33,varReturn);
+    if(perfOffsets)perfOffsets.forEach((v,k)=>writeU16LE(common,to+35+k*2,v));
   }
   return 8;
 }
@@ -2014,6 +2110,47 @@ function writeSharedLegacyPartFieldsIntoPartBlock(parsed,partBlock,sourcePartNo)
   if(partCommon&&partCommon.data.length>=0x16){
     writeU16LE(partBlock,114,partCommon.data[0x14]);
     writeU16LE(partBlock,116,partCommon.data[0x15]);
+
+    // Legacy +0x17 Keyboard Control Switch -> rel+31 (ESP-verified).
+    if(partCommon.data.length>0x17)partBlock[31]=partCommon.data[0x17]&1;
+
+    // Legacy +0x26 Insertion FX Switch, bit0 A / bit1 B -> rel+33/+34 (ESP-verified).
+    if(partCommon.data.length>0x26){
+      partBlock[33]=partCommon.data[0x26]&1;
+      partBlock[34]=(partCommon.data[0x26]>>1)&1;
+    }
+
+    // Legacy +0x35 Key Assign Mode, +0x36 Mono/Poly -> rel+37/+38; +0x34
+    // Portamento Time Mode -> rel+224 u16 (ESP-verified).
+    if(partCommon.data.length>0x36){
+      partBlock[37]=partCommon.data[0x35]&1;
+      partBlock[38]=partCommon.data[0x36]&1;
+      writeU16LE(partBlock,224,partCommon.data[0x34]&3);
+    }
+
+    // Receive switches: legacy +0x40..+0x43 bit flags -> one byte each at
+    // rel+40..+62 (ESP-verified). Poly AT (rel+42) and M-only ones: template.
+    const LEGACY_RECEIVE_SWITCHES=[
+      [0x40,6,40],[0x40,5,41],[0x40,4,43],[0x40,3,44],[0x40,2,45], // PB, AT, PC, Bank, CC
+      [0x42,6,46],[0x41,0,47],[0x41,1,48],[0x41,2,49],             // Knob 1..4
+      [0x41,3,50],[0x41,4,51],[0x41,5,52],[0x41,6,53],             // Knob 5..8
+      [0x42,4,54],[0x42,5,55],[0x42,3,56],[0x42,2,57],             // FC1, FC2, MW, Sustain
+      [0x42,1,58],[0x42,0,59],[0x43,6,60],[0x43,5,61],[0x43,4,62]  // Pan, Vol/Exp, Ribbon, BC, FS
+    ];
+    if(partCommon.data.length>0x43)
+      for(const [so,bit,rel] of LEGACY_RECEIVE_SWITCHES)
+        partBlock[rel]=(partCommon.data[so]>>bit)&1;
+
+    // Legacy +0x20/+0x21 Pitch Bend Range Upper/Lower -> rel+212/+214 (raw).
+    if(partCommon.data.length>0x21){
+      writeU16LE(partBlock,212,partCommon.data[0x20]);
+      writeU16LE(partBlock,214,partCommon.data[0x21]);
+    }
+
+    // Part Assignable Knob 1..8 values, legacy +0x6A..+0x71 -> rel+170..+184.
+    if(partCommon.data.length>0x71)
+      for(let k=0;k<8;k++)
+        writeU16LE(partBlock,170+k*2,legacyKnobValueToModern(partCommon.data[0x6A+k]));
 
     // v1.28 AWM2/legacy Part fidelity.
     // Yamaha-documented legacy Performance Part (31 0p 00):
@@ -2173,7 +2310,8 @@ function writeSharedLegacyPartFieldsIntoPartBlock(parsed,partBlock,sourcePartNo)
     writeU16LE(partBlock,rb+15,row.polarity??0);
     // Direct WebMIDI/ESP conversion expands legacy 7-bit Ratio to the
     // modern 8-bit Depth domain by exact ×2 (e.g. 80->160, 96->192).
-    writeU16LE(partBlock,rb+17,Math.max(0,Math.min(254,(row.source_ratio_raw??64)*2)));
+    // ×2 tops out at 254; see legacyRatioToDepth.
+    writeU16LE(partBlock,rb+17,legacyRatioToDepth(row.source_ratio_raw??64));
   }
   const sc=decodeLegacyInsertionSidechains(parsed,sourcePartNo);
   if(sc.A!==null)writeU16LE(partBlock,SHARED_PART_TARGET.SIDECHAIN_A,sc.A);
@@ -2186,22 +2324,10 @@ function writeSharedLegacyPartFieldsIntoPartBlock(parsed,partBlock,sourcePartNo)
   const arpSlots=decodeLegacyPresetArpSlots(parsed,sourcePartNo);
   writeSharedPresetArpSlotsToPartBlock(partBlock,arpSlots);
 
-  const sceneMixRaw=decodeLegacySceneMix(parsed,sourcePartNo);
-  const memFlags=legacySceneMemorizeFlags(parsed);
-  const sceneMix=sceneMixRaw.map(scene=>{
-    const flags=memFlags.find(f=>f.scene===(scene.number|0))||null;
-    const filtered=filterLegacyScenePartByMemorize(scene,flags);
-    return neutralizeLegacySceneMixFromCurrentPart(filtered,flags,partBlock);
-  });
-  const activeSet=new Set(
-    sceneMix.filter(legacyScenePartHasRetainedData).map(s=>(s.number|0)-1)
-  );
-  applySceneActivationSetToPartBlock(partBlock,activeSet);
-
-  // v1.67 — write only Scene Part fields whose corresponding Scene Common
-  // memorize family is ON. Stored source bytes are not themselves proof that
-  // the Scene should recall those values.
-  writeSharedSceneMixToPartBlock(partBlock,sceneMix);
+  // Each Scene's settings for this Part are copied as stored, whatever the
+  // memorize switches (as MODX and ESP keep them). Replaces the v1.67 memorize
+  // filter and current-Part neutralization.
+  writeSharedSceneMixToPartBlock(partBlock,decodeLegacySceneMix(parsed,sourcePartNo));
 }
 
 
@@ -2654,6 +2780,13 @@ const SHARED_SCENE_TARGET_FIELDS=Object.freeze([
   {name:'resonance_offset',targetRel:12,encoding:'center64',sourceWired:true,sourceScope:'all'},
   {name:'feg_depth_offset',targetRel:14,encoding:'center64',sourceWired:true,sourceScope:'all'},
   {name:'aeg_attack_offset',targetRel:16,encoding:'center64',sourceWired:true,sourceScope:'all'},
+  // AEG Decay/Sustain/Release and Part Mute (rel -2), legacy only; ESP-verified.
+  {name:'aeg_decay_offset',targetRel:18,encoding:'center64',sourceWired:true,sourceScope:'legacy'},
+  {name:'aeg_sustain_offset',targetRel:20,encoding:'center64',sourceWired:true,sourceScope:'legacy'},
+  {name:'aeg_release_offset',targetRel:22,encoding:'center64',sourceWired:true,sourceScope:'legacy'},
+  {name:'mute',targetRel:-2,encoding:'bool',sourceWired:true,sourceScope:'legacy'},
+  // rel 44 is the Scene's Keyboard Control for the Part, not an activation
+  // flag; the name is kept for existing callers.
   {name:'active_companion',targetRel:44,encoding:'bool',sourceWired:true,structuralAuto:false},
   {name:'swing',targetRel:46,encoding:'center128',sourceWired:true,sourceScope:'legacy+modern'},
   {name:'unit',targetRel:48,encoding:'enum',sourceWired:true,sourceScope:'legacy+modern'},
@@ -2676,8 +2809,8 @@ const SHARED_SCENE_MIX_FIELDS=SHARED_SCENE_WRITER_FIELDS;
 
 const SCENE_MUTE_STATUS=Object.freeze({
   status:'ESP_VERIFIED',
-  exactTargetEvidence:'NEEDS_RECONCILIATION',
-  rule:'Do not classify Scene Mute as an open mapping gap; do not emit until the exact verified target is recovered.'
+  exactTargetEvidence:'rel -2 of each Scene\'s settings for the Part (ESP Y2L export, 2026-10-25)',
+  rule:'Emitted from legacy 36 cp 00 +0x00; M-generation source not wired yet.'
 });
 
 function decodeMGenerationSceneMix(parsed,sourcePartNo){
@@ -2740,6 +2873,7 @@ function decodeLegacySceneMix(parsed,sourcePartNo){
     if(d.length<6)continue;
     scenes.push({
       number:caps.c+1,
+      mute:d[0x00]&1,
       volume:d[0x01],
       pan:d[0x02],
       reverb_send:d[0x03],
@@ -2749,6 +2883,9 @@ function decodeLegacySceneMix(parsed,sourcePartNo){
       resonance_offset:d.length>0x07?d[0x07]:null,
       feg_depth_offset:d.length>0x08?d[0x08]:null,
       aeg_attack_offset:d.length>0x09?d[0x09]:null,
+      aeg_decay_offset:d.length>0x0A?d[0x0A]:null,
+      aeg_sustain_offset:d.length>0x0B?d[0x0B]:null,
+      aeg_release_offset:d.length>0x0C?d[0x0C]:null,
 
       // v1.44 — legacy Scene Part Play-FX fields.
       // 36 cp 00:
@@ -2763,11 +2900,8 @@ function decodeLegacySceneMix(parsed,sourcePartNo){
       gate_time:d.length>0x13?readLegacyU14BE(d,0x12):null,
       velocity:d.length>0x15?readLegacyU14BE(d,0x14):null,
 
-      // Empirical Soundmondo/direct-WebMIDI mapping:
-      // legacy +0x0D is documented as reserved in Yamaha's public table,
-      // but in supplied Soundmondo files it tracks the modern active
-      // companion flag at Part Scene rel +44 exactly. Keep this explicitly
-      // marked empirical rather than Yamaha-documented.
+      // Legacy +0x0D (documented as reserved) is the Scene's Keyboard Control
+      // for the Part -> rel +44 (ESP-verified; formerly read as an activation flag).
       active_companion:d.length>0x0D?(d[0x0D]&1):null
     });
   }
@@ -2822,7 +2956,6 @@ function writeSharedSceneMixToPartBlock(partBlock,scenes){
     const i=(scene.number|0)-1;
     if(i<0||i>=SHARED_PART_TARGET.SCENE_COUNT)continue;
     const base=SHARED_PART_TARGET.SCENE_BASE+i*SHARED_PART_TARGET.SCENE_STRIDE;
-    if(sceneHasMixSnapshot(scene))activatePartSceneSnapshotInPartBlock(partBlock,i);
     for(const f of SHARED_SCENE_MIX_FIELDS){
       if(scene[f.name]===undefined||scene[f.name]===null)continue;
       writeU16LE(partBlock,base+f.targetRel,scene[f.name]);
@@ -3080,7 +3213,7 @@ function planEngineTopology(parts){
 
 
 
-// v1.69 — Exact-20-character DPFM name boundary fix (Frank regression):
+// v1.72-PR14-REVIEW — Exact-20-character DPFM name boundary fix (Frank regression):
 // - YSFC Performance/Part names are 20 visible chars + mandatory NUL at +20
 // - u32 prefix 0x00000015 denotes the 21-byte C-string area
 // - fixes stray template padding such as 0x25 ('%') appearing after 20-char names
@@ -3102,7 +3235,8 @@ const REQUIRED_CARRY_FORWARD_FIXES=Object.freeze([
 ]);
 
 function finalizePerformanceArtifact(bytes,performanceName,part1Name){
-  const perf=String(performanceName||'Converted').trim()||'Converted';
+  // Trailing spaces only: a leading space is part of the name and kept in DPFM.
+  const perf=String(performanceName||'Converted').replace(/\s+$/,'')||'Converted';
   const part=String(part1Name||'Part 1').trim()||'Part 1';
 
   // One mandatory finalization path for every writer.
@@ -3128,7 +3262,7 @@ function finalizePerformanceArtifact(bytes,performanceName,part1Name){
   if(actualPerf!==expectedPerf){
     throw new Error(`Performance-name validation: DPFM "${actualPerf}" != "${expectedPerf}"`);
   }
-  // v1.69 regression guard for the exact-20-character spill bug.
+  // v1.72-PR14-REVIEW regression guard for the exact-20-character spill bug.
   // Byte +24 is the NUL terminator after the 20 visible name bytes.
   if(finalBlob.length<25 || finalBlob[24]!==0){
     const got=finalBlob.length>=25?`0x${finalBlob[24].toString(16).padStart(2,'0')}`:'EOF';
@@ -3409,7 +3543,7 @@ function yamahaName20(s){
   return String(s||'').replace(/\x00.*$/s,'').slice(0,20);
 }
 function putAsciiFixed(a,o,n,s){
-  // v1.69: Modern YSFC Performance/Part name records use a 21-byte
+  // v1.72-PR14-REVIEW: Modern YSFC Performance/Part name records use a 21-byte
   // C-string area: up to 20 visible characters at o..o+19 and a mandatory
   // NUL terminator at o+20. The preceding u32 value is 0x00000015 (=21).
   // Shorter ESP exports may leave bytes after the first NUL as undefined
@@ -3449,15 +3583,17 @@ function patchKnownLegacyAwm2ElementBlock(engine,elem,index){
     // Direct WebMIDI conversion leaves this byte zero for all Elements.
     engine[base+6]=0;
 
-    // v1.54 — legacy AWM2 -> M-generation Controller Set switch normalization.
-    // Direct Yamaha WebMIDI/ESP conversion evidence (Show Must Go On), and
-    // the previously matching v1.45 baseline, show that the legacy per-Element
-    // Controller Set 1..16 mask is NOT serialized directly into MODX M
-    // Element rel+7..+22.  For legacy conversion Yamaha emits Controller Set 1
-    // Switch Off at rel+7 and leaves Sets 2..16 at the M-generation template
-    // defaults (On).  v1.46/v1.49 attempts to write these fields directly are
-    // therefore superseded.  Preserve rel+8..+22 from the verified template.
-    engine[base+7]=0;
+    // Controller Set 1..16 Element Switch, legacy +0x1B..+0x1D (layout as the
+    // FM-X Operator mask) -> rel+7..+22; Sets 17..32 stay at template (On).
+    // Supersedes the v1.54 "Set 1 Off" rule: ESP's import keeps the source mask.
+    if(d41.length>0x1D){
+      const mask=((d41[0x1B]&0x03)<<14)|((d41[0x1C]&0x7F)<<7)|(d41[0x1D]&0x7F);
+      for(let k=0;k<16;k++)engine[base+7+k]=(mask>>k)&1;
+    }
+
+    // Part LFO Element Switch, legacy +0x24 bit0..bit2 = Box 1..3 -> rel+3..+5.
+    if(d41.length>0x24)
+      for(let k=0;k<3;k++)engine[base+3+k]=(d41[0x24]>>k)&1;
 
     const map8=[
       // Element / oscillator controls
@@ -3476,6 +3612,7 @@ function patchKnownLegacyAwm2ElementBlock(engine,elem,index){
       [0x12, 79], // Key On Delay Time Length
       [0x13,  1], // Key On Delay Tempo Sync Switch
       [0x17, 81], // Element Connection
+      [0x25, 85], // Key On Delay Note Length (raw, ESP-verified)
 
       // Amplitude
       [0x28, 91], // Element Level
@@ -3671,10 +3808,7 @@ function patchKnownLegacyAwm2ElementBlock(engine,elem,index){
     // Direct WebMIDI/ESP evidence across all active Elements:
     //   modern = (legacy << 2) | (legacy >> 6)
     // i.e. MSB replication, not floating-point scaling/rounding.
-    const legacyCutoffToModern=v=>{
-      v=Math.max(0,Math.min(255,v|0));
-      return (v<<2)|(v>>6);
-    };
+    // Superseded: see legacyCutoffToModern (one rule for AWM2, FM-X and Drum).
     if(0x02<d42.length)w(203,legacyCutoffToModern(u14(d42,0x01))); // Filter Cutoff
     if(0x08<d42.length)w(211,legacyCutoffToModern(u14(d42,0x07))); // HPF Cutoff
 
@@ -3873,7 +4007,9 @@ function assembleGenericEngineTopology(common,parts){
       // For AWM2 the byte immediately before the first engine header is
       // Element Count (1–128), not a fixed 0x08 magic value.
       pcs[i][5763]=genericEngineMarker(parts[0]);
-      pcs[i][5764]=0;
+      // The byte before each engine is the FM-X engine's first field
+      // (Random Pan Depth); 0 otherwise.
+      pcs[i][5764]=parts[0].preEngineByte??0;
     }
   }
 
@@ -3881,7 +4017,7 @@ function assembleGenericEngineTopology(common,parts){
   for(let i=0;i<n;i++){
     if(i>0){
       pool.push(new Uint8Array([
-        0,0,0,genericEngineMarker(parts[i]),0
+        0,0,0,genericEngineMarker(parts[i]),parts[i].preEngineByte??0
       ]));
     }
     pool.push(parts[i].engine);
@@ -4137,8 +4273,8 @@ function applyLegacyDrumWaveFieldsOnly(engine,keyIndex,msg){
 
 function scaleLegacyDrumCutoffToM(v){
   // Legacy Drum cutoff domain 0..255 -> M-generation 0..1023.
-  // Endpoint-preserving linear expansion.
-  return Math.round((Math.max(0,Math.min(255,v))*1023)/255);
+  // Same rule as AWM2 / FM-X (was rounding; Drum not measured on ESP).
+  return legacyCutoffToModern(v);
 }
 
 function applyLegacyDrumNonFilterFields(engine,keyIndex,msg){
@@ -4231,16 +4367,7 @@ function buildSingleLegacyDrumY2L(item){
   writeLegacyPerformanceMasterSwitches(parsed,common);
 
   const piece=buildLegacyDrumPartPiece(parsed,a.part);
-  const distinct=deduplicateLegacySceneMix(piece.legacyScenes||[]);
-  const activeSet=new Set(distinct.map(s=>(s.number|0)-1));
-  if(!activeSet.size)activeSet.add(0);
-
-  for(let c=0;c<8;c++){
-    const off=SHARED_SCENE_COMMON.BASE+
-      c*SHARED_SCENE_COMMON.STRIDE+
-      SHARED_SCENE_COMMON.MIXING_MEMORIZE_REL;
-    common[off]=activeSet.has(c)?1:0;
-  }
+  // Scene memorize switches come from the source (writeLegacySceneCommonCore).
 
   const blob=assembleGenericEngineTopology(common,[piece]);
   const built=rebuildContiguousPerfYsfc(
@@ -5158,8 +5285,8 @@ function writeLegacyFmxCommonFilterPeg2Lfo(parsed,sourcePartNo,blob,targetSlot){
   // Key On Delay Note Length:
   // source 11 -> Y2L 14 is previously verified.
   // source 14 -> Y2L 17 is ESP_VERIFIED (Delay Length 1/4 x 4).
-  if(d[0x05]===11)blob[eb+9]=14;
-  else if(d[0x05]===14)blob[eb+9]=17;
+  // Superseded: ESP's import keeps the raw value (11 -> 11), as for AWM2.
+  blob[eb+9]=d[0x05];
 
   // Part PEG / pitch common.
   const pegMap=[
@@ -5234,7 +5361,8 @@ function writeLegacyFmxCommonFilterPeg2Lfo(parsed,sourcePartNo,blob,targetSlot){
   for(const f of filter){
     const v=f.codec==='u14'?legacyU14BE(d,f.so):d[f.so];
     const rel=85+f.mo;
-    if(f.mo===0x02)writeU16LE(blob,eb+rel,v);
+    // Cutoff (+02) and HPF Cutoff (+0A) are u16LE 0..1023 in M: scale them.
+    if(f.mo===0x02||f.mo===0x0A)writeU16LE(blob,eb+rel,legacyCutoffToModern(v));
     else blob[eb+rel]=v&0xFF;
     mappedFilter.push({name:f.name,sourceOffset:f.so,modernOffset:f.mo,targetRel:rel,value:v});
   }
@@ -5419,8 +5547,9 @@ function writeLegacyFmxCoreToTarget(parsed,sourcePartNo,blob,targetSlot){
     // Recovery v1.0.77: ESP_VERIFIED.
     // Legacy source codes are centered at 7; modern Y2L stores the signed
     // sensitivity directly in the low byte at Operator +62/+64.
-    const pitchControllerSensitivity=d[0x23]-7;
-    const levelControllerSensitivity=d[0x24]-7;
+    // Superseded: ESP's import stores the raw 0..14 code (7 -> 7).
+    const pitchControllerSensitivity=d[0x23];
+    const levelControllerSensitivity=d[0x24];
     blob[ob+0x42]=pitchControllerSensitivity&0xFF;
     blob[ob+0x43]=0;
     blob[ob+0x44]=levelControllerSensitivity&0xFF;
@@ -5490,14 +5619,23 @@ function buildLegacyFmxCorePartPiece(parsed,part,activeSceneSet=null){
   writeSharedLegacyPartFieldsIntoPartBlock(parsed,partBlock,part.number);
   const partLfo=writeLegacyPartLfoWaveSpeed(parsed,part.number,partBlock);
 
+  // M-only FM-X Scene settings (Cutoff / Resonance / FEG Depth, Scene rel
+  // +24/+26/+28): as ESP, every Scene gets the Part's own engine +87/+91/+121.
+  const e16=o=>blob[info.body+o]|(blob[info.body+o+1]<<8);
+  for(let s=0;s<SHARED_PART_TARGET.SCENE_COUNT;s++){
+    const base=SHARED_PART_TARGET.SCENE_BASE+s*SHARED_PART_TARGET.SCENE_STRIDE;
+    writeU16LE(partBlock,base+24,e16(87));
+    writeU16LE(partBlock,base+26,e16(91));
+    writeU16LE(partBlock,base+28,e16(121));
+  }
+
   const legacyScenes=decodeLegacySceneMix(parsed,part.number);
-  // Scene Part fields are written by the shared legacy adapter above; activation
-  // is handled in the performance common by the caller.
 
   return {
     engineType:'FM-X',
     part:partBlock,
     engine:blockSlice(blob,info.body,VERIFIED_GENERIC_TOPOLOGY.ENGINE_BODY_SIZE['FM-X']),
+    preEngineByte:blob[info.body-1], // Random Pan Depth, stored just before the engine
     mapped:{...mapped,partLfo},
     legacyScenes
   };
@@ -6309,6 +6447,43 @@ function legacyMultiFmxAssessment(item){
   };
 }
 
+// Keep legacy Part numbers, as ESP's import does: unused Parts below the last
+// used one become switched-off AWM2 Init Parts. Parts must be in ascending
+// Part order.
+function legacyFillerPartBlock(){
+  const ref=firstDpfmBlob(b64u8(VERIFIED_AWM2_INIT_Y2L_B64));
+  const ps=ref.slice(
+    VERIFIED_GENERIC_TOPOLOGY.COMMON_SIZE,
+    VERIFIED_GENERIC_TOPOLOGY.COMMON_SIZE+VERIFIED_GENERIC_TOPOLOGY.PART_SIZE
+  );
+  putAsciiFixed(ps,4,20,'Initialized Part');
+  ps[29]=0; // Part Switch
+  ps[31]=0; // Keyboard Control
+  return ps;
+}
+function legacyFillerPartPiece(){
+  const ref=firstDpfmBlob(b64u8(VERIFIED_AWM2_INIT_Y2L_B64));
+  const engineStart=VERIFIED_GENERIC_TOPOLOGY.COMMON_SIZE+VERIFIED_GENERIC_TOPOLOGY.PART_SIZE;
+  return {
+    engineType:'AWM2',
+    elementCount:8,
+    part:legacyFillerPartBlock(),
+    engine:ref.slice(engineStart,engineStart+VERIFIED_GENERIC_TOPOLOGY.ENGINE_BODY_SIZE.AWM2)
+  };
+}
+function legacyPartsInPlace(pieces,parts){
+  const outPieces=[],outParts=[];
+  parts.forEach((p,i)=>{
+    while(outPieces.length<p.number-1){
+      outPieces.push(legacyFillerPartPiece());
+      outParts.push({engine:'AWM2',number:outPieces.length});
+    }
+    outPieces.push(pieces[i]);
+    outParts.push(p);
+  });
+  return {pieces:outPieces,parts:outParts};
+}
+
 function buildLegacyMultiFmxY2L(item){
   const a=legacyMultiFmxAssessment(item);
   if(!a.ok)throw new Error(a.reason);
@@ -6323,27 +6498,12 @@ function buildLegacyMultiFmxY2L(item){
   writeLegacyPerformanceMasterSwitches(parsed,common);
 
   const pieces=[];
-  const activeSceneSet=new Set();
+  for(const p of a.parts)pieces.push(buildLegacyFmxCorePartPiece(parsed,p));
+  // Scene memorize switches come from the source (writeLegacySceneCommonCore).
 
-  for(const p of a.parts){
-    const piece=buildLegacyFmxCorePartPiece(parsed,p);
-    pieces.push(piece);
-
-    const distinct=deduplicateLegacySceneMix(piece.legacyScenes||[]);
-    for(const scene of distinct)activeSceneSet.add((scene.number|0)-1);
-  }
-
-  if(!activeSceneSet.size)activeSceneSet.add(0);
-
-  for(let c=0;c<8;c++){
-    const off=SHARED_SCENE_COMMON.BASE+
-      c*SHARED_SCENE_COMMON.STRIDE+
-      SHARED_SCENE_COMMON.MIXING_MEMORIZE_REL;
-    common[off]=activeSceneSet.has(c)?1:0;
-  }
-
-  const blob=assembleGenericEngineTopology(common,pieces);
-  const selector=genericEntrEngineBitmask(a.parts);
+  const slots=legacyPartsInPlace(pieces,a.parts);
+  const blob=assembleGenericEngineTopology(common,slots.pieces);
+  const selector=genericEntrEngineBitmask(slots.parts);
 
   const built=rebuildContiguousPerfYsfc(
     template,
@@ -6351,7 +6511,7 @@ function buildLegacyMultiFmxY2L(item){
     n.name||'Converted Performance',
     a.parts[0].name||'Part 1',
     selector,
-    a.parts.map((_,i)=>i+1)
+    slots.parts.map((_,i)=>i+1)
   );
 
   return finalizePerformanceArtifact(
@@ -6472,7 +6632,6 @@ function buildLegacyMixedAllY2L(item){
   writeLegacyPerformanceMasterSwitches(parsed,common);
 
   const pieces=[];
-  const activeSceneSet=new Set();
 
   for(const p of a.parts){
     let piece;
@@ -6482,19 +6641,8 @@ function buildLegacyMixedAllY2L(item){
     else throw new Error(`Unsupported legacy mixed engine ${p.engine}`);
 
     pieces.push(piece);
-
-    const distinct=deduplicateLegacySceneMix(piece.legacyScenes||[]);
-    for(const scene of distinct)activeSceneSet.add((scene.number|0)-1);
   }
-
-  if(!activeSceneSet.size)activeSceneSet.add(0);
-
-  for(let c=0;c<8;c++){
-    const off=SHARED_SCENE_COMMON.BASE+
-      c*SHARED_SCENE_COMMON.STRIDE+
-      SHARED_SCENE_COMMON.MIXING_MEMORIZE_REL;
-    common[off]=activeSceneSet.has(c)?1:0;
-  }
+  // Scene memorize switches come from the source (writeLegacySceneCommonCore).
 
   // Mirror first active Part category into Performance Common when available.
   const first=a.parts[0];
@@ -6508,8 +6656,9 @@ function buildLegacyMixedAllY2L(item){
     writeU16LE(common,64,pcm.data[0x15]);
   }
 
-  const blob=assembleGenericEngineTopology(common,pieces);
-  const selector=genericEntrEngineBitmask(a.parts);
+  const slots=legacyPartsInPlace(pieces,a.parts);
+  const blob=assembleGenericEngineTopology(common,slots.pieces);
+  const selector=genericEntrEngineBitmask(slots.parts);
 
   const built=rebuildContiguousPerfYsfc(
     template,
@@ -6517,7 +6666,7 @@ function buildLegacyMixedAllY2L(item){
     n.name||'Converted Performance',
     a.parts[0].name||'Part 1',
     selector,
-    a.parts.map((_,i)=>i+1)
+    slots.parts.map((_,i)=>i+1)
   );
 
   return finalizePerformanceArtifact(
@@ -6588,7 +6737,6 @@ function buildLegacyMixedFmxAwm2Y2L(item){
   writeLegacyPerformanceMasterSwitches(parsed,common);
 
   const pieces=[];
-  const activeSceneSet=new Set();
 
   for(const p of a.parts){
     let piece;
@@ -6601,24 +6749,12 @@ function buildLegacyMixedFmxAwm2Y2L(item){
     }
 
     pieces.push(piece);
-
-    const distinct=deduplicateLegacySceneMix(piece.legacyScenes||[]);
-    for(const scene of distinct){
-      activeSceneSet.add((scene.number|0)-1);
-    }
   }
+  // Scene memorize switches come from the source (writeLegacySceneCommonCore).
 
-  if(!activeSceneSet.size)activeSceneSet.add(0);
-
-  for(let c=0;c<8;c++){
-    const off=SHARED_SCENE_COMMON.BASE+
-      c*SHARED_SCENE_COMMON.STRIDE+
-      SHARED_SCENE_COMMON.MIXING_MEMORIZE_REL;
-    common[off]=activeSceneSet.has(c)?1:0;
-  }
-
-  const blob=assembleGenericEngineTopology(common,pieces);
-  const selector=genericEntrEngineBitmask(a.parts);
+  const slots=legacyPartsInPlace(pieces,a.parts);
+  const blob=assembleGenericEngineTopology(common,slots.pieces);
+  const selector=genericEntrEngineBitmask(slots.parts);
 
   const built=rebuildContiguousPerfYsfc(
     template,
@@ -6626,7 +6762,7 @@ function buildLegacyMixedFmxAwm2Y2L(item){
     n.name||'Converted Performance',
     a.parts[0].name||'Part 1',
     selector,
-    a.parts.map((_,i)=>i+1)
+    slots.parts.map((_,i)=>i+1)
   );
 
   return finalizePerformanceArtifact(
@@ -6895,11 +7031,13 @@ function buildLegacyAwm2Y2L(item){
 
   const common=ref.slice(0,SUB_COMMON);
   putAsciiFixed(common,4,20,n.name||'Converted');
-  common[22]=0;
+  // (A former "common[22]=0" cut names after 18 characters.)
   // v1.03: the legacy AWM2 path previously skipped the shared Performance
   // master-switch writer used by Drum/FM-X/mixed legacy paths.
   writeLegacyPerformanceMasterSwitches(item.analysis.parsed,common);
-  common[6695]=parts.length;
+  // Keep legacy Part numbers (see legacyPartsInPlace).
+  const slotCount=Math.max(...parts.map(p=>p.number));
+  common[6695]=slotCount;
   common[6700]=BLOB_ENGINE.AWM2;
 
   const refPart=ref.slice(SUB_COMMON,SUB_COMMON+SUB_PART);
@@ -6907,21 +7045,26 @@ function buildLegacyAwm2Y2L(item){
 
   const partBlocks=[];
   const engineBlocks=[];
-  const legacyActiveSceneSet=new Set();
-  for(let i=0;i<parts.length;i++){
-    const part=parts[i];
-    const ps=refPart.slice();
-    putAsciiFixed(ps,4,20,part.name||`Part ${i+1}`);
+  for(let i=0;i<slotCount;i++){
+    const part=parts.find(p=>p.number===i+1);
+    const ps=part?refPart.slice():legacyFillerPartBlock();
+    if(part)putAsciiFixed(ps,4,20,part.name||`Part ${i+1}`);
 
     // Part Common structural tail/link marker at rel 0x1683:
     // intermediate Part Common records point onward with 0x01;
     // the final AWM2 Part terminates the Part Common chain with 0x08.
-    const [tail0,tail1]=awm2PartCommonTailPair(i,parts.length);
+    const [tail0,tail1]=awm2PartCommonTailPair(i,slotCount);
     ps[0x1683]=tail0;
     ps[0x1684]=tail1;
 
+    if(!part){
+      partBlocks.push(ps);
+      engineBlocks.push(i===0?refEngine.slice():concatU8([AWM2_PREFIX,refEngine]));
+      continue;
+    }
+
     // v0.31: generation-neutral shared fields from legacy Soundmondo.
-    writeSharedLegacyPartFieldsIntoPartBlock(item.analysis.parsed,ps,parts[i].number);
+    writeSharedLegacyPartFieldsIntoPartBlock(item.analysis.parsed,ps,part.number);
 
     // v1.34 — IMPORTANT: pure legacy AWM2 uses buildLegacyAwm2Y2L(),
     // not buildLegacyAwm2PartPiece(). v1.33 wired the verified legacy
@@ -6929,17 +7072,7 @@ function buildLegacyAwm2Y2L(item){
     // such as Show Must Go On did not actually receive the Part-LFO data.
     // Apply the same already-verified 31 4p 00 -> modern Part Common map
     // here as well.
-    writeLegacyPartLfoWaveSpeed(item.analysis.parsed,parts[i].number,ps);
-
-    const memFlags=legacySceneMemorizeFlags(item.analysis.parsed);
-    const legacyScenesForActivation=decodeLegacySceneMix(
-      item.analysis.parsed,parts[i].number
-    ).map(scene=>filterLegacyScenePartByMemorize(
-      scene,memFlags.find(f=>f.scene===(scene.number|0))||null
-    )).filter(legacyScenePartHasRetainedData);
-    for(const scene of legacyScenesForActivation){
-      legacyActiveSceneSet.add((scene.number|0)-1);
-    }
+    writeLegacyPartLfoWaveSpeed(item.analysis.parsed,part.number,ps);
     partBlocks.push(ps);
 
     const eng=refEngine.slice();
@@ -6950,22 +7083,12 @@ function buildLegacyAwm2Y2L(item){
     engineBlocks.push(i===0?eng:concatU8([AWM2_PREFIX,eng]));
   }
 
-  if(!legacyActiveSceneSet.size)legacyActiveSceneSet.add(0);
-  for(let c=0;c<8;c++){
-    const off=SHARED_SCENE_COMMON.BASE+
-      c*SHARED_SCENE_COMMON.STRIDE+
-      SHARED_SCENE_COMMON.MIXING_MEMORIZE_REL;
-    common[off]=legacyActiveSceneSet.has(c)?1:0;
-  }
-  // v1.42: deduplication is useful for structural scene retention, but it is
-  // NOT the same thing as Yamaha's Mixing Memorize flag. Restore the exact
-  // legacy Scene Common flags/selects after the structural activation pass.
-  writeLegacySceneCommonCore(item.analysis.parsed,common);
+  // Scene memorize switches come from the source (writeLegacySceneCommonCore).
 
   const blob=concatU8([common,...partBlocks,...engineBlocks]);
   const built=rebuildContiguousPerfYsfc(
     template,blob,n.name||'Converted',parts[0].name||'Part 1',
-    ENTR_ENGINE.AWM2,parts.map((_,i)=>i+1)
+    ENTR_ENGINE.AWM2,Array.from({length:slotCount},(_,i)=>i+1)
   );
   return finalizePerformanceArtifact(
     built,
@@ -7124,11 +7247,7 @@ function sourcePortamentoState(item,sourceParts=null){
       if(sourcePartNo<1||sourcePartNo>16)
         throw new Error(`Portamento preserve: invalid source Part ${sourcePartNo}`);
 
-      if(part.engine==='Drum'){
-        partStates.push({sourcePartNo,engine:part.engine,available:false});
-        continue;
-      }
-
+      // Drum Parts too: ESP's import copies their Portamento switch/time/mode.
       const p=sourcePartNo-1;
       const pc=parsed.find(m=>
         validSourceBulk(m)&&m.protocolTable==='legacy'&&m.address?.length===3&&
@@ -7149,7 +7268,7 @@ function sourcePortamentoState(item,sourceParts=null){
           performanceSwitch,performanceTime,partStates};
 }
 
-function preserveSourcePortamentoInY2L(item,bytes,sourceParts=null){
+function preserveSourcePortamentoInY2L(item,bytes,sourceParts=null,packed=false){
   const state=sourcePortamentoState(item,sourceParts);
   const blob=firstDpfmBlob(bytes);
   if(blob.length<PORTAMENTO_TARGET.COMMON_SIZE)
@@ -7174,6 +7293,9 @@ function preserveSourcePortamentoInY2L(item,bytes,sourceParts=null){
   if(plannedPartCount>templatePartCount)
     throw new Error(`Portamento preserve: export plan requires ${plannedPartCount} Parts but template provides ${templatePartCount} slots`);
   const targetPartCount=plannedPartCount;
+  // Legacy writers keep Parts at their source numbers, except the single-Drum
+  // writer, which places its one Part in slot 1 (packed).
+  const slotOf=(st,i)=>state.generation==='legacy'&&!packed?st.sourcePartNo-1:i;
 
   if(state.performanceSwitch!==null)
     blob[PORTAMENTO_TARGET.PERF_MASTER_REL]=state.performanceSwitch;
@@ -7183,9 +7305,10 @@ function preserveSourcePortamentoInY2L(item,bytes,sourceParts=null){
   for(let i=0;i<targetPartCount;i++){
     const st=state.partStates[i];
     if(!st.available)continue;
-    const base=PORTAMENTO_TARGET.COMMON_SIZE+i*PORTAMENTO_TARGET.PART_SIZE;
-    if(base+PORTAMENTO_TARGET.PART_MODE_REL>=blob.length)
-      throw new Error(`Portamento preserve: target Part ${i+1} Common block is truncated`);
+    const slot=slotOf(st,i);
+    const base=PORTAMENTO_TARGET.COMMON_SIZE+slot*PORTAMENTO_TARGET.PART_SIZE;
+    if(slot>=templatePartCount||base+PORTAMENTO_TARGET.PART_MODE_REL>=blob.length)
+      throw new Error(`Portamento preserve: target Part ${slot+1} Common block is truncated`);
     if(st.switchValue!==null)blob[base+PORTAMENTO_TARGET.PART_SWITCH_REL]=st.switchValue;
     if(st.time!==null)blob[base+PORTAMENTO_TARGET.PART_TIME_REL]=st.time;
     if(st.mode!==null)blob[base+PORTAMENTO_TARGET.PART_MODE_REL]=st.mode;
@@ -7203,13 +7326,14 @@ function preserveSourcePortamentoInY2L(item,bytes,sourceParts=null){
   for(let i=0;i<targetPartCount;i++){
     const st=state.partStates[i];
     if(!st.available)continue;
-    const base=PORTAMENTO_TARGET.COMMON_SIZE+i*PORTAMENTO_TARGET.PART_SIZE;
+    const slot=slotOf(st,i);
+    const base=PORTAMENTO_TARGET.COMMON_SIZE+slot*PORTAMENTO_TARGET.PART_SIZE;
     if(st.switchValue!==null && verify[base+PORTAMENTO_TARGET.PART_SWITCH_REL]!==st.switchValue)
-      throw new Error(`Portamento preserve validation failed for target Part ${i+1} Switch`);
+      throw new Error(`Portamento preserve validation failed for target Part ${slot+1} Switch`);
     if(st.time!==null && verify[base+PORTAMENTO_TARGET.PART_TIME_REL]!==st.time)
-      throw new Error(`Portamento preserve validation failed for target Part ${i+1} Time`);
+      throw new Error(`Portamento preserve validation failed for target Part ${slot+1} Time`);
     if(st.mode!==null && verify[base+PORTAMENTO_TARGET.PART_MODE_REL]!==st.mode)
-      throw new Error(`Portamento preserve validation failed for target Part ${i+1} Mode`);
+      throw new Error(`Portamento preserve validation failed for target Part ${slot+1} Mode`);
   }
   return out;
 }
@@ -7255,7 +7379,7 @@ function applyExportOverrides(item,bytes,gate=null){
   // v1.56: preserve Portamento against the exact source-Part list selected by
   // exportAssessment, so specialized writers and preserve logic cannot disagree.
   // Force OFF remains an explicit optional safety/compatibility override.
-  let out=preserveSourcePortamentoInY2L(item,bytes,gate?.parts||null);
+  let out=preserveSourcePortamentoInY2L(item,bytes,gate?.parts||null,gate?.kind==='LEGACY-DRUM');
   const forceOff=document.getElementById('forcePortamentoOff')?.checked===true;
   if(forceOff)out=forcePortamentoOffInY2L(out);
   return out;
@@ -7566,6 +7690,39 @@ function hideWorkProgress(kind){
 }
 function yieldToBrowser(){return new Promise(resolve=>requestAnimationFrame(()=>resolve()));}
 
+// MONTAGE Connect .X7B / MODX Connect .X8B: YSFC wrapper whose Data block
+// holds LE records (tag, length, payload); tag 1005 is the plain bulk-dump
+// SysEx. Any other layout is refused.
+const CONNECT_TAGS=[1000,1001,1002,1003,1004,1005];
+function isConnectFile(b){
+  return b.length>=11&&String.fromCharCode(...b.subarray(0,11))==='YAMAHA-YSFC';
+}
+function unwrapConnectFile(b){
+  const n=b.length,fail=why=>{throw new Error(`Connect file: ${why}`);};
+  const ascii=(o,len)=>String.fromCharCode(...b.subarray(o,o+len));
+  const be32=o=>((b[o]<<24)>>>0)+(b[o+1]<<16)+(b[o+2]<<8)+b[o+3];
+  const le32=o=>(b[o]|(b[o+1]<<8)|(b[o+2]<<16))+b[o+3]*0x1000000;
+  if(n<0x80)fail('file too short');
+  if(be32(0x20)!==0x10||ascii(0x40,4)!=='EBLK'||be32(0x44)!==0x50||ascii(0x48,4)!=='DBLK'||be32(0x4C)!==0x6C)
+    fail('unknown block directory');
+  if(ascii(0x50,4)!=='EBLK'||be32(0x58)!==1||ascii(0x5C,4)!=='Entr')fail('expected exactly one performance');
+  if(ascii(0x6C,4)!=='DBLK'||be32(0x70)!==0x10||be32(0x74)!==1||ascii(0x78,4)!=='Data')fail('unknown data block');
+  const dataLen=be32(0x7C);
+  if(0x80+dataLen!==n||be32(0x64)!==dataLen||be32(0x68)!==0x0C)fail('data length does not match the file');
+  const rec={};
+  for(let o=0x80;o<n;){
+    if(o+8>n)fail('truncated record');
+    const tag=le32(o),len=le32(o+4);
+    if(!CONNECT_TAGS.includes(tag))fail(`unknown record ${tag}`);
+    if(rec[tag])fail(`record ${tag} appears twice`);
+    if(o+8+len>n)fail(`record ${tag} runs past the end`);
+    rec[tag]=b.subarray(o+8,o+8+len);
+    o+=8+len;
+  }
+  for(const t of CONNECT_TAGS)if(!rec[t])fail(`record ${t} missing`);
+  return rec[1005].slice();
+}
+
 async function addFiles(files){
   const list=Array.from(files||[]);
   if(!list.length)return;
@@ -7575,8 +7732,10 @@ async function addFiles(files){
   for(let i=0;i<list.length;i++){
     const f=list[i];
     try{
-      const raw=new Uint8Array(await f.arrayBuffer());
+      const file=new Uint8Array(await f.arrayBuffer());
+      let raw=file;
       try{
+        if(isConnectFile(file))raw=unwrapConnectFile(file);
         const analysis=parseSoundmondo(raw);
         if(!analysis.bulk)throw new Error('No Yamaha Bulk Dump messages');
         items.push({name:f.name,size:f.size,raw,analysis});
