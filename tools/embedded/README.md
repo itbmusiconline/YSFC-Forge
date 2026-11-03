@@ -26,12 +26,17 @@ inner markup. This is purely a styling boundary: no JavaScript depends on it,
 and nothing else in the code was changed to accommodate it.
 
 ## Scripts
-### build-embedcss.ps1
+### build-embedcss.ps1 (optional - NOT for the Elementor widget)
 Generates:
-- ysfc-library-builder.html  
+- ysfc-library-builder.html  (all-in-one, ~10,000 lines, JavaScript inline)
 (Extracts the content of <style> and <body> sections and combines them in a 
 self-contained code that can be used within a HTML/JS compatible container. 
 CSS is injected via <script>)
+
+Not part of the normal build and not run on an update. Its output differs
+from the widget file only by the missing "-embed" and was mistaken for a
+broken widget build (2026-11-03). Run it only when an all-in-one file is
+actually needed for some other container.
 
 ### build-library-embedded.ps1
 Generates:
@@ -283,7 +288,7 @@ that number changes, upstream's header CSS changed.
 
 ## Why the CSS stays inline
 
-All three scripts keep the CSS inside the widget, stored in a
+All three scripts (including the optional `build-embedcss.ps1`) keep the CSS inside the widget, stored in a
 `<script type="text/plain">` block and injected into `document.head` by a
 small script placed **before** the markup. Styles are therefore applied
 before the content renders - there is no unstyled flash.
@@ -344,10 +349,12 @@ the scripts cannot pick up a stale copy.
    pushed, so its history is not rewritten).
 3. Verify every tracked upstream tool is byte-identical to upstream - see
    below. Do not trust "merge succeeded" on its own.
-4. Run the three scripts in this folder.
-5. Check every `itb-custom:` line appears with no warnings - six per Library
-   Builder script, five for the SysEx script - and that the h1 mirror count
-   still reads 5.
+4. Run `build-library-embedded.ps1` and `build-sysex-embedded.ps1`. Not
+   `build-embedcss.ps1` - it is optional and its output is not the widget
+   file (see "Scripts" above).
+5. Check every `itb-custom:` line appears with no warnings - six for the
+   Library Builder script, five for the SysEx script - and that the h1
+   mirror count still reads 5.
 6. For each file the change report calls CHANGED, confirm it is real (see
    "Known false positive: line endings" and "Compare against the right
    baseline" above) before re-uploading or re-pasting.
